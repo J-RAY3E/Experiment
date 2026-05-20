@@ -1,0 +1,10 @@
+// Example: Countdown loop
+function main() {
+    let i = 5;
+    while (i > 0) {
+        print(i + 48); // Convert to ASCII digit
+        i = i - 1;
+    }
+    print(10); // Newline
+    halt;
+}

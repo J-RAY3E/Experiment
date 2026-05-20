@@ -1,0 +1,311 @@
+input: " \n"
+name: vector_demo
+out_output: "00 00 00 00 \n"
+out_lst: "        .org 0\n0000 - 524000C8 - ADDI s0 zero 200\n0001 - 526000CC - ADDI\
+  \ s1 zero 204\n0002 - 528000D0 - ADDI s2 zero 208\n0003 - D0120000 - VLD V0 [s0+0]\n\
+  0004 - D0330000 - VLD V1 [s1+0]\n0005 - C0400800 - VADD V2 V0 V1\n0006 - D4540000\
+  \ - VST V2 [s2+0]\n0007 - 52A00000 - ADDI s3 zero 0\n0008 - 51800004 - ADDI t0 zero\
+  \ 4\n0009 - 9415600D - BGE s3 t0 done\n000A - 19B4A800 - ADD t1 s2 s3\n000B - 05CD0000\
+  \ - LW t2 t1 0\n000C - 51E0000A - ADDI t3 zero 10\n000D - 260E7800 - DIV t4 t2 t3\n\
+  000E - 2A2E7800 - REM t5 t2 t3\n000F - 52100030 - ADDI t4 t4 48\n0010 - 0A0007F4\
+  \ - SW t4 zero 0xFFF4\n0011 - 52310030 - ADDI t5 t5 48\n0012 - 0A2007F4 - SW t5\
+  \ zero 0xFFF4\n0013 - 51800020 - ADDI t0 zero 32\n0014 - 098007F4 - SW t0 zero 0xFFF4\n\
+  0015 - 52B50001 - ADDI s3 s3 1\n0016 - A0000008 - J print_vec\n0017 - 5180000A -\
+  \ ADDI t0 zero 10\n0018 - 098007F4 - SW t0 zero 0xFFF4\n0019 - FC000000 - HALT \n\
+  \        .org 200\n        .word 10\n        .word 20\n        .word 30\n      \
+  \  .word 40\n        .org 204\n        .word 1\n        .word 2\n        .word 3\n\
+  \        .word 4\n        .org 208\n        .word 0\n        .word 0\n        .word\
+  \ 0\n        .word 0"
+source_file: golden/vector_demo/source.asm
+out_journal: 'tick=     1 phase=Execute pc=0001 ir=524000C8  ADDI a=00000000 b=00000000
+  alu=00000000
+
+  tick=     2 phase=  Fetch pc=0001 ir=524000C8  ADDI
+
+  tick=     3 phase=Execute pc=0002 ir=526000CC  ADDI a=00000000 b=00000000 alu=000000C8
+
+  tick=     4 phase=  Fetch pc=0002 ir=526000CC  ADDI
+
+  tick=     5 phase=Execute pc=0003 ir=528000D0  ADDI a=00000000 b=00000000 alu=000000CC
+
+  tick=     6 phase=  Fetch pc=0003 ir=528000D0  ADDI
+
+  tick=     7 phase=Execute pc=0004 ir=D0120000   VLD a=00000000 b=00000000
+
+  tick=     8 phase=  Fetch pc=0004 ir=D0120000   VLD
+
+  tick=     9 phase=Execute pc=0005 ir=D0330000   VLD a=000000C8 b=00000000
+
+  tick=    10 phase=  Fetch pc=0005 ir=D0330000   VLD
+
+  tick=    11 phase=Execute pc=0006 ir=C0400800  VADD a=000000CC b=00000000
+
+  tick=    12 phase=  Fetch pc=0006 ir=C0400800  VADD
+
+  tick=    13 phase=Execute pc=0007 ir=D4540000   VST a=0000000A b=00000001
+
+  tick=    14 phase=  Fetch pc=0007 ir=D4540000   VST
+
+  tick=    15 phase=Execute pc=0008 ir=52A00000  ADDI a=000000D0 b=00000001 alu=000000D0
+
+  tick=    16 phase=  Fetch pc=0008 ir=52A00000  ADDI
+
+  tick=    17 phase=Execute pc=0009 ir=51800004  ADDI a=00000000 b=00000001 alu=00000000
+
+  tick=    18 phase=  Fetch pc=0009 ir=51800004  ADDI
+
+  tick=    19 phase=Execute pc=000A ir=9415600D   BGE a=00000000 b=00000001
+
+  tick=    20 phase=  Fetch pc=000A ir=9415600D   BGE
+
+  tick=    21 phase=Execute pc=000B ir=19B4A800   ADD a=00000000 b=00000004 alu=00000004
+
+  tick=    22 phase=  Fetch pc=000B ir=19B4A800   ADD
+
+  tick=    23 phase=Execute pc=000C ir=05CD0000    LW a=000000D0 b=00000000
+
+  tick=    24 phase=  Fetch pc=000C ir=05CD0000    LW
+
+  tick=    25 phase=Execute pc=000D ir=51E0000A  ADDI a=000000D0 b=00000000 alu=000000D0
+
+  tick=    26 phase=  Fetch pc=000D ir=51E0000A  ADDI
+
+  tick=    27 phase=Execute pc=000E ir=260E7800   DIV a=00000000 b=00000000 alu=0000000A
+
+  tick=    28 phase=  Fetch pc=000E ir=260E7800   DIV
+
+  tick=    29 phase=Execute pc=000F ir=2A2E7800   REM a=00000000 b=0000000A alu=00000000
+
+  tick=    30 phase=  Fetch pc=000F ir=2A2E7800   REM
+
+  tick=    31 phase=Execute pc=0010 ir=52100030  ADDI a=00000000 b=0000000A alu=00000000
+
+  tick=    32 phase=  Fetch pc=0010 ir=52100030  ADDI
+
+  tick=    33 phase=Execute pc=0011 ir=0A0007F4    SW a=00000000 b=0000000A
+
+  tick=    34 phase=  Fetch pc=0011 ir=0A0007F4    SW
+
+  tick=    35 phase=Execute pc=0012 ir=52310030  ADDI a=00000000 b=0000000A alu=FFFFFFF4
+
+  tick=    36 phase=  Fetch pc=0012 ir=52310030  ADDI
+
+  tick=    37 phase=Execute pc=0013 ir=0A2007F4    SW a=00000000 b=0000000A
+
+  tick=    38 phase=  Fetch pc=0013 ir=0A2007F4    SW
+
+  tick=    39 phase=Execute pc=0014 ir=51800020  ADDI a=00000000 b=0000000A alu=FFFFFFF4
+
+  tick=    40 phase=  Fetch pc=0014 ir=51800020  ADDI
+
+  tick=    41 phase=Execute pc=0015 ir=098007F4    SW a=00000000 b=0000000A
+
+  tick=    42 phase=  Fetch pc=0015 ir=098007F4    SW
+
+  tick=    43 phase=Execute pc=0016 ir=52B50001  ADDI a=00000000 b=0000000A alu=FFFFFFF4
+
+  tick=    44 phase=  Fetch pc=0016 ir=52B50001  ADDI
+
+  tick=    45 phase=Execute pc=0017 ir=A0000008     J
+
+  tick=    46 phase=  Fetch pc=0008 ir=A0000008     J
+
+  tick=    47 phase=Execute pc=0009 ir=51800004  ADDI a=00000000 b=0000000A alu=00000001
+
+  tick=    48 phase=  Fetch pc=0009 ir=51800004  ADDI
+
+  tick=    49 phase=Execute pc=000A ir=9415600D   BGE a=00000000 b=0000000A
+
+  tick=    50 phase=  Fetch pc=000A ir=9415600D   BGE
+
+  tick=    51 phase=Execute pc=000B ir=19B4A800   ADD a=00000001 b=00000004 alu=00000004
+
+  tick=    52 phase=  Fetch pc=000B ir=19B4A800   ADD
+
+  tick=    53 phase=Execute pc=000C ir=05CD0000    LW a=000000D0 b=00000001
+
+  tick=    54 phase=  Fetch pc=000C ir=05CD0000    LW
+
+  tick=    55 phase=Execute pc=000D ir=51E0000A  ADDI a=000000D1 b=00000001 alu=000000D1
+
+  tick=    56 phase=  Fetch pc=000D ir=51E0000A  ADDI
+
+  tick=    57 phase=Execute pc=000E ir=260E7800   DIV a=00000000 b=00000001 alu=0000000A
+
+  tick=    58 phase=  Fetch pc=000E ir=260E7800   DIV
+
+  tick=    59 phase=Execute pc=000F ir=2A2E7800   REM a=00000000 b=0000000A alu=00000000
+
+  tick=    60 phase=  Fetch pc=000F ir=2A2E7800   REM
+
+  tick=    61 phase=Execute pc=0010 ir=52100030  ADDI a=00000000 b=0000000A alu=00000000
+
+  tick=    62 phase=  Fetch pc=0010 ir=52100030  ADDI
+
+  tick=    63 phase=Execute pc=0011 ir=0A0007F4    SW a=00000000 b=0000000A
+
+  tick=    64 phase=  Fetch pc=0011 ir=0A0007F4    SW
+
+  tick=    65 phase=Execute pc=0012 ir=52310030  ADDI a=00000000 b=0000000A alu=FFFFFFF4
+
+  tick=    66 phase=  Fetch pc=0012 ir=52310030  ADDI
+
+  tick=    67 phase=Execute pc=0013 ir=0A2007F4    SW a=00000000 b=0000000A
+
+  tick=    68 phase=  Fetch pc=0013 ir=0A2007F4    SW
+
+  tick=    69 phase=Execute pc=0014 ir=51800020  ADDI a=00000000 b=0000000A alu=FFFFFFF4
+
+  tick=    70 phase=  Fetch pc=0014 ir=51800020  ADDI
+
+  tick=    71 phase=Execute pc=0015 ir=098007F4    SW a=00000000 b=0000000A
+
+  tick=    72 phase=  Fetch pc=0015 ir=098007F4    SW
+
+  tick=    73 phase=Execute pc=0016 ir=52B50001  ADDI a=00000000 b=0000000A alu=FFFFFFF4
+
+  tick=    74 phase=  Fetch pc=0016 ir=52B50001  ADDI
+
+  tick=    75 phase=Execute pc=0017 ir=A0000008     J
+
+  tick=    76 phase=  Fetch pc=0008 ir=A0000008     J
+
+  tick=    77 phase=Execute pc=0009 ir=51800004  ADDI a=00000001 b=0000000A alu=00000002
+
+  tick=    78 phase=  Fetch pc=0009 ir=51800004  ADDI
+
+  tick=    79 phase=Execute pc=000A ir=9415600D   BGE a=00000000 b=0000000A
+
+  tick=    80 phase=  Fetch pc=000A ir=9415600D   BGE
+
+  tick=    81 phase=Execute pc=000B ir=19B4A800   ADD a=00000002 b=00000004 alu=00000004
+
+  tick=    82 phase=  Fetch pc=000B ir=19B4A800   ADD
+
+  tick=    83 phase=Execute pc=000C ir=05CD0000    LW a=000000D0 b=00000002
+
+  tick=    84 phase=  Fetch pc=000C ir=05CD0000    LW
+
+  tick=    85 phase=Execute pc=000D ir=51E0000A  ADDI a=000000D2 b=00000002 alu=000000D2
+
+  tick=    86 phase=  Fetch pc=000D ir=51E0000A  ADDI
+
+  tick=    87 phase=Execute pc=000E ir=260E7800   DIV a=00000000 b=00000002 alu=0000000A
+
+  tick=    88 phase=  Fetch pc=000E ir=260E7800   DIV
+
+  tick=    89 phase=Execute pc=000F ir=2A2E7800   REM a=00000000 b=0000000A alu=00000000
+
+  tick=    90 phase=  Fetch pc=000F ir=2A2E7800   REM
+
+  tick=    91 phase=Execute pc=0010 ir=52100030  ADDI a=00000000 b=0000000A alu=00000000
+
+  tick=    92 phase=  Fetch pc=0010 ir=52100030  ADDI
+
+  tick=    93 phase=Execute pc=0011 ir=0A0007F4    SW a=00000000 b=0000000A
+
+  tick=    94 phase=  Fetch pc=0011 ir=0A0007F4    SW
+
+  tick=    95 phase=Execute pc=0012 ir=52310030  ADDI a=00000000 b=0000000A alu=FFFFFFF4
+
+  tick=    96 phase=  Fetch pc=0012 ir=52310030  ADDI
+
+  tick=    97 phase=Execute pc=0013 ir=0A2007F4    SW a=00000000 b=0000000A
+
+  tick=    98 phase=  Fetch pc=0013 ir=0A2007F4    SW
+
+  tick=    99 phase=Execute pc=0014 ir=51800020  ADDI a=00000000 b=0000000A alu=FFFFFFF4
+
+  tick=   100 phase=  Fetch pc=0014 ir=51800020  ADDI
+
+  tick=   101 phase=Execute pc=0015 ir=098007F4    SW a=00000000 b=0000000A
+
+  tick=   102 phase=  Fetch pc=0015 ir=098007F4    SW
+
+  tick=   103 phase=Execute pc=0016 ir=52B50001  ADDI a=00000000 b=0000000A alu=FFFFFFF4
+
+  tick=   104 phase=  Fetch pc=0016 ir=52B50001  ADDI
+
+  tick=   105 phase=Execute pc=0017 ir=A0000008     J
+
+  tick=   106 phase=  Fetch pc=0008 ir=A0000008     J
+
+  tick=   107 phase=Execute pc=0009 ir=51800004  ADDI a=00000002 b=0000000A alu=00000003
+
+  tick=   108 phase=  Fetch pc=0009 ir=51800004  ADDI
+
+  tick=   109 phase=Execute pc=000A ir=9415600D   BGE a=00000000 b=0000000A
+
+  tick=   110 phase=  Fetch pc=000A ir=9415600D   BGE
+
+  tick=   111 phase=Execute pc=000B ir=19B4A800   ADD a=00000003 b=00000004 alu=00000004
+
+  tick=   112 phase=  Fetch pc=000B ir=19B4A800   ADD
+
+  tick=   113 phase=Execute pc=000C ir=05CD0000    LW a=000000D0 b=00000003
+
+  tick=   114 phase=  Fetch pc=000C ir=05CD0000    LW
+
+  tick=   115 phase=Execute pc=000D ir=51E0000A  ADDI a=000000D3 b=00000003 alu=000000D3
+
+  tick=   116 phase=  Fetch pc=000D ir=51E0000A  ADDI
+
+  tick=   117 phase=Execute pc=000E ir=260E7800   DIV a=00000000 b=00000003 alu=0000000A
+
+  tick=   118 phase=  Fetch pc=000E ir=260E7800   DIV
+
+  tick=   119 phase=Execute pc=000F ir=2A2E7800   REM a=00000000 b=0000000A alu=00000000
+
+  tick=   120 phase=  Fetch pc=000F ir=2A2E7800   REM
+
+  tick=   121 phase=Execute pc=0010 ir=52100030  ADDI a=00000000 b=0000000A alu=00000000
+
+  tick=   122 phase=  Fetch pc=0010 ir=52100030  ADDI
+
+  tick=   123 phase=Execute pc=0011 ir=0A0007F4    SW a=00000000 b=0000000A
+
+  tick=   124 phase=  Fetch pc=0011 ir=0A0007F4    SW
+
+  tick=   125 phase=Execute pc=0012 ir=52310030  ADDI a=00000000 b=0000000A alu=FFFFFFF4
+
+  tick=   126 phase=  Fetch pc=0012 ir=52310030  ADDI
+
+  tick=   127 phase=Execute pc=0013 ir=0A2007F4    SW a=00000000 b=0000000A
+
+  tick=   128 phase=  Fetch pc=0013 ir=0A2007F4    SW
+
+  tick=   129 phase=Execute pc=0014 ir=51800020  ADDI a=00000000 b=0000000A alu=FFFFFFF4
+
+  tick=   130 phase=  Fetch pc=0014 ir=51800020  ADDI
+
+  tick=   131 phase=Execute pc=0015 ir=098007F4    SW a=00000000 b=0000000A
+
+  tick=   132 phase=  Fetch pc=0015 ir=098007F4    SW
+
+  tick=   133 phase=Execute pc=0016 ir=52B50001  ADDI a=00000000 b=0000000A alu=FFFFFFF4
+
+  tick=   134 phase=  Fetch pc=0016 ir=52B50001  ADDI
+
+  tick=   135 phase=Execute pc=0017 ir=A0000008     J
+
+  tick=   136 phase=  Fetch pc=0008 ir=A0000008     J
+
+  tick=   137 phase=Execute pc=0009 ir=51800004  ADDI a=00000003 b=0000000A alu=00000004
+
+  tick=   138 phase=  Fetch pc=0009 ir=51800004  ADDI
+
+  tick=   139 phase=Execute pc=000A ir=9415600D   BGE a=00000000 b=0000000A
+
+  tick=   140 phase=  Fetch pc=0017 ir=9415600D   BGE
+
+  tick=   141 phase=Execute pc=0018 ir=5180000A  ADDI a=00000004 b=00000004 alu=00000004
+
+  tick=   142 phase=  Fetch pc=0018 ir=5180000A  ADDI
+
+  tick=   143 phase=Execute pc=0019 ir=098007F4    SW a=00000000 b=00000004
+
+  tick=   144 phase=  Fetch pc=0019 ir=098007F4    SW
+
+  tick=   145 phase=Execute pc=001A ir=FC000000  HALT
+
+  tick=   146 phase=   Halt pc=001A ir=FC000000  HALT'

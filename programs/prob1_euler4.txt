@@ -1,0 +1,61 @@
+// Euler Problem 4: Largest palindrome product of two 3-digit numbers
+function main() {
+    let max = 0;
+    let a = 999;
+    let b = 0;
+    let p = 0;
+    let n = 0;
+    let rev = 0;
+    let d = 0;
+
+    while (a >= 100) {
+        b = 999;
+        while (b >= a) {
+            p = a * b;
+            if (p > max) {
+                // check palindrome
+                n = p;
+                rev = 0;
+                while (n > 0) {
+                    d = n % 10;
+                    rev = rev * 10 + d;
+                    n = n / 10;
+                }
+                if (rev == p) {
+                    max = p;
+                }
+            } else {
+                // Optimization: if a * b <= max, then for all smaller b, 
+                // a * b will also be <= max. We can stop the inner loop.
+                b = 0; 
+            }
+            b = b - 1;
+        }
+        a = a - 1;
+    }
+
+    // print max as decimal digits
+    // max has max 6 digits: 999*999 = 998001
+    let t = max;
+    let digits = 0;
+    let div = 1;
+    while (t > 0) {
+        digits = digits + 1;
+        t = t / 10;
+        div = div * 10;
+    }
+    div = div / 10;
+
+    if (div == 0) {
+        print(48); // case where max is 0 (should not happen)
+    } else {
+        while (div > 0) {
+            d = max / div;
+            print(d + 48);
+            max = max - d * div;
+            div = div / 10;
+        }
+    }
+    print(10);  // newline
+    halt;
+}
