@@ -1,1172 +1,632 @@
-input: 'Alice
-
-  '
 name: hello_user_name
-out_output: 'What is your name?
-
+source_file: golden\hello_user_name\source.asm
+input: |
+  Alice
+out_output: |
+  What is your name?
   Hello, Alice!
-
-  '
-out_lst: "        .org 0\n0000 - 16400000 - LUI s0 0\n0001 - 525200C8 - ADDI s0 s0\
-  \ 200\n0002 - 06720000 - LW s1 s0 0\n0003 - 52800000 - ADDI s2 zero 0\n0004 - 94149806\
-  \ - BGE s2 s1 read_name\n0005 - 51920001 - ADDI t0 s0 1\n0006 - 19ACA000 - ADD t1\
-  \ t0 s2\n0007 - 05CD0000 - LW t2 t1 0\n0008 - 09C007F4 - SW t2 zero 0xFFF4\n0009\
-  \ - 52940001 - ADDI s2 s2 1\n000A - A0000004 - J print_prompt\n000B - 52A000F0 -\
-  \ ADDI s3 zero 240\n000C - 52C00000 - ADDI s4 zero 0\n000D - 058007F0 - LW t0 zero\
-  \ 0xFFF0\n000E - 800C0007 - BEQ t0 zero print_hello\n000F - 51A0000A - ADDI t1 zero\
-  \ 10\n0010 - 800C6805 - BEQ t0 t1 print_hello\n0011 - 51D50001 - ADDI t2 s3 1\n\
-  0012 - 19EEB000 - ADD t3 t2 s4\n0013 - 098F0000 - SW t0 t3 0\n0014 - 52D60001 -\
-  \ ADDI s4 s4 1\n0015 - A000000D - J read_loop\n0016 - 0AD50000 - SW s4 s3 0\n0017\
-  \ - 524000DC - ADDI s0 zero 220\n0018 - 06720000 - LW s1 s0 0\n0019 - 52800000 -\
-  \ ADDI s2 zero 0\n001A - 94149806 - BGE s2 s1 print_name_chars\n001B - 51920001\
-  \ - ADDI t0 s0 1\n001C - 19ACA000 - ADD t1 t0 s2\n001D - 05CD0000 - LW t2 t1 0\n\
-  001E - 09C007F4 - SW t2 zero 0xFFF4\n001F - 52940001 - ADDI s2 s2 1\n0020 - A000001A\
-  \ - J print_hello_str\n0021 - 52800000 - ADDI s2 zero 0\n0022 - 9414B006 - BGE s2\
-  \ s4 print_end\n0023 - 51950001 - ADDI t0 s3 1\n0024 - 19ACA000 - ADD t1 t0 s2\n\
-  0025 - 05CD0000 - LW t2 t1 0\n0026 - 09C007F4 - SW t2 zero 0xFFF4\n0027 - 52940001\
-  \ - ADDI s2 s2 1\n0028 - A0000022 - J print_name_loop\n0029 - 51800021 - ADDI t0\
-  \ zero 33\n002A - 098007F4 - SW t0 zero 0xFFF4\n002B - 5180000A - ADDI t0 zero 10\n\
-  002C - 098007F4 - SW t0 zero 0xFFF4\n002D - FC000000 - HALT \n        .org 200\n\
-  \        .string \"What is your name?\\n\"\n        .org 220\n        .string \"\
-  Hello, \""
-source_file: golden/hello_user_name/source.asm
-out_journal: 'tick=     1 phase=Execute pc=0001 ir=16400000   LUI a=00000000 b=00000000
-  alu=00000000
-
-  tick=     2 phase=  Fetch pc=0001 ir=16400000   LUI
-
-  tick=     3 phase=Execute pc=0002 ir=525200C8  ADDI a=00000000 b=00000000 alu=00000000
-
-  tick=     4 phase=  Fetch pc=0002 ir=525200C8  ADDI
-
-  tick=     5 phase=Execute pc=0003 ir=06720000    LW a=00000000 b=00000000
-
-  tick=     6 phase=  Fetch pc=0003 ir=06720000    LW
-
-  tick=     7 phase=Execute pc=0004 ir=52800000  ADDI a=000000C8 b=00000000 alu=000000C8
-
-  tick=     8 phase=  Fetch pc=0004 ir=52800000  ADDI
-
-  tick=     9 phase=Execute pc=0005 ir=94149806   BGE a=00000000 b=00000000
-
-  tick=    10 phase=  Fetch pc=0005 ir=94149806   BGE
-
-  tick=    11 phase=Execute pc=0006 ir=51920001  ADDI a=00000000 b=00000013 alu=00000000
-
-  tick=    12 phase=  Fetch pc=0006 ir=51920001  ADDI
-
-  tick=    13 phase=Execute pc=0007 ir=19ACA000   ADD a=000000C8 b=00000013 alu=000000C9
-
-  tick=    14 phase=  Fetch pc=0007 ir=19ACA000   ADD
-
-  tick=    15 phase=Execute pc=0008 ir=05CD0000    LW a=000000C9 b=00000000
-
-  tick=    16 phase=  Fetch pc=0008 ir=05CD0000    LW
-
-  tick=    17 phase=Execute pc=0009 ir=09C007F4    SW a=000000C9 b=00000000
-
-  tick=    18 phase=  Fetch pc=0009 ir=09C007F4    SW
-
-  tick=    19 phase=Execute pc=000A ir=52940001  ADDI a=00000000 b=00000000 alu=FFFFFFF4
-
-  tick=    20 phase=  Fetch pc=000A ir=52940001  ADDI
-
-  tick=    21 phase=Execute pc=000B ir=A0000004     J
-
-  tick=    22 phase=  Fetch pc=0004 ir=A0000004     J
-
-  tick=    23 phase=Execute pc=0005 ir=94149806   BGE a=00000000 b=00000000
-
-  tick=    24 phase=  Fetch pc=0005 ir=94149806   BGE
-
-  tick=    25 phase=Execute pc=0006 ir=51920001  ADDI a=00000001 b=00000013 alu=00000001
-
-  tick=    26 phase=  Fetch pc=0006 ir=51920001  ADDI
-
-  tick=    27 phase=Execute pc=0007 ir=19ACA000   ADD a=000000C8 b=00000013 alu=000000C9
-
-  tick=    28 phase=  Fetch pc=0007 ir=19ACA000   ADD
-
-  tick=    29 phase=Execute pc=0008 ir=05CD0000    LW a=000000C9 b=00000001
-
-  tick=    30 phase=  Fetch pc=0008 ir=05CD0000    LW
-
-  tick=    31 phase=Execute pc=0009 ir=09C007F4    SW a=000000CA b=00000001
-
-  tick=    32 phase=  Fetch pc=0009 ir=09C007F4    SW
-
-  tick=    33 phase=Execute pc=000A ir=52940001  ADDI a=00000000 b=00000001 alu=FFFFFFF4
-
-  tick=    34 phase=  Fetch pc=000A ir=52940001  ADDI
-
-  tick=    35 phase=Execute pc=000B ir=A0000004     J
-
-  tick=    36 phase=  Fetch pc=0004 ir=A0000004     J
-
-  tick=    37 phase=Execute pc=0005 ir=94149806   BGE a=00000001 b=00000001
-
-  tick=    38 phase=  Fetch pc=0005 ir=94149806   BGE
-
-  tick=    39 phase=Execute pc=0006 ir=51920001  ADDI a=00000002 b=00000013 alu=00000002
-
-  tick=    40 phase=  Fetch pc=0006 ir=51920001  ADDI
-
-  tick=    41 phase=Execute pc=0007 ir=19ACA000   ADD a=000000C8 b=00000013 alu=000000C9
-
-  tick=    42 phase=  Fetch pc=0007 ir=19ACA000   ADD
-
-  tick=    43 phase=Execute pc=0008 ir=05CD0000    LW a=000000C9 b=00000002
-
-  tick=    44 phase=  Fetch pc=0008 ir=05CD0000    LW
-
-  tick=    45 phase=Execute pc=0009 ir=09C007F4    SW a=000000CB b=00000002
-
-  tick=    46 phase=  Fetch pc=0009 ir=09C007F4    SW
-
-  tick=    47 phase=Execute pc=000A ir=52940001  ADDI a=00000000 b=00000002 alu=FFFFFFF4
-
-  tick=    48 phase=  Fetch pc=000A ir=52940001  ADDI
-
-  tick=    49 phase=Execute pc=000B ir=A0000004     J
-
-  tick=    50 phase=  Fetch pc=0004 ir=A0000004     J
-
-  tick=    51 phase=Execute pc=0005 ir=94149806   BGE a=00000002 b=00000002
-
-  tick=    52 phase=  Fetch pc=0005 ir=94149806   BGE
-
-  tick=    53 phase=Execute pc=0006 ir=51920001  ADDI a=00000003 b=00000013 alu=00000003
-
-  tick=    54 phase=  Fetch pc=0006 ir=51920001  ADDI
-
-  tick=    55 phase=Execute pc=0007 ir=19ACA000   ADD a=000000C8 b=00000013 alu=000000C9
-
-  tick=    56 phase=  Fetch pc=0007 ir=19ACA000   ADD
-
-  tick=    57 phase=Execute pc=0008 ir=05CD0000    LW a=000000C9 b=00000003
-
-  tick=    58 phase=  Fetch pc=0008 ir=05CD0000    LW
-
-  tick=    59 phase=Execute pc=0009 ir=09C007F4    SW a=000000CC b=00000003
-
-  tick=    60 phase=  Fetch pc=0009 ir=09C007F4    SW
-
-  tick=    61 phase=Execute pc=000A ir=52940001  ADDI a=00000000 b=00000003 alu=FFFFFFF4
-
-  tick=    62 phase=  Fetch pc=000A ir=52940001  ADDI
-
-  tick=    63 phase=Execute pc=000B ir=A0000004     J
-
-  tick=    64 phase=  Fetch pc=0004 ir=A0000004     J
-
-  tick=    65 phase=Execute pc=0005 ir=94149806   BGE a=00000003 b=00000003
-
-  tick=    66 phase=  Fetch pc=0005 ir=94149806   BGE
-
-  tick=    67 phase=Execute pc=0006 ir=51920001  ADDI a=00000004 b=00000013 alu=00000004
-
-  tick=    68 phase=  Fetch pc=0006 ir=51920001  ADDI
-
-  tick=    69 phase=Execute pc=0007 ir=19ACA000   ADD a=000000C8 b=00000013 alu=000000C9
-
-  tick=    70 phase=  Fetch pc=0007 ir=19ACA000   ADD
-
-  tick=    71 phase=Execute pc=0008 ir=05CD0000    LW a=000000C9 b=00000004
-
-  tick=    72 phase=  Fetch pc=0008 ir=05CD0000    LW
-
-  tick=    73 phase=Execute pc=0009 ir=09C007F4    SW a=000000CD b=00000004
-
-  tick=    74 phase=  Fetch pc=0009 ir=09C007F4    SW
-
-  tick=    75 phase=Execute pc=000A ir=52940001  ADDI a=00000000 b=00000004 alu=FFFFFFF4
-
-  tick=    76 phase=  Fetch pc=000A ir=52940001  ADDI
-
-  tick=    77 phase=Execute pc=000B ir=A0000004     J
-
-  tick=    78 phase=  Fetch pc=0004 ir=A0000004     J
-
-  tick=    79 phase=Execute pc=0005 ir=94149806   BGE a=00000004 b=00000004
-
-  tick=    80 phase=  Fetch pc=0005 ir=94149806   BGE
-
-  tick=    81 phase=Execute pc=0006 ir=51920001  ADDI a=00000005 b=00000013 alu=00000005
-
-  tick=    82 phase=  Fetch pc=0006 ir=51920001  ADDI
-
-  tick=    83 phase=Execute pc=0007 ir=19ACA000   ADD a=000000C8 b=00000013 alu=000000C9
-
-  tick=    84 phase=  Fetch pc=0007 ir=19ACA000   ADD
-
-  tick=    85 phase=Execute pc=0008 ir=05CD0000    LW a=000000C9 b=00000005
-
-  tick=    86 phase=  Fetch pc=0008 ir=05CD0000    LW
-
-  tick=    87 phase=Execute pc=0009 ir=09C007F4    SW a=000000CE b=00000005
-
-  tick=    88 phase=  Fetch pc=0009 ir=09C007F4    SW
-
-  tick=    89 phase=Execute pc=000A ir=52940001  ADDI a=00000000 b=00000005 alu=FFFFFFF4
-
-  tick=    90 phase=  Fetch pc=000A ir=52940001  ADDI
-
-  tick=    91 phase=Execute pc=000B ir=A0000004     J
-
-  tick=    92 phase=  Fetch pc=0004 ir=A0000004     J
-
-  tick=    93 phase=Execute pc=0005 ir=94149806   BGE a=00000005 b=00000005
-
-  tick=    94 phase=  Fetch pc=0005 ir=94149806   BGE
-
-  tick=    95 phase=Execute pc=0006 ir=51920001  ADDI a=00000006 b=00000013 alu=00000006
-
-  tick=    96 phase=  Fetch pc=0006 ir=51920001  ADDI
-
-  tick=    97 phase=Execute pc=0007 ir=19ACA000   ADD a=000000C8 b=00000013 alu=000000C9
-
-  tick=    98 phase=  Fetch pc=0007 ir=19ACA000   ADD
-
-  tick=    99 phase=Execute pc=0008 ir=05CD0000    LW a=000000C9 b=00000006
-
-  tick=   100 phase=  Fetch pc=0008 ir=05CD0000    LW
-
-  tick=   101 phase=Execute pc=0009 ir=09C007F4    SW a=000000CF b=00000006
-
-  tick=   102 phase=  Fetch pc=0009 ir=09C007F4    SW
-
-  tick=   103 phase=Execute pc=000A ir=52940001  ADDI a=00000000 b=00000006 alu=FFFFFFF4
-
-  tick=   104 phase=  Fetch pc=000A ir=52940001  ADDI
-
-  tick=   105 phase=Execute pc=000B ir=A0000004     J
-
-  tick=   106 phase=  Fetch pc=0004 ir=A0000004     J
-
-  tick=   107 phase=Execute pc=0005 ir=94149806   BGE a=00000006 b=00000006
-
-  tick=   108 phase=  Fetch pc=0005 ir=94149806   BGE
-
-  tick=   109 phase=Execute pc=0006 ir=51920001  ADDI a=00000007 b=00000013 alu=00000007
-
-  tick=   110 phase=  Fetch pc=0006 ir=51920001  ADDI
-
-  tick=   111 phase=Execute pc=0007 ir=19ACA000   ADD a=000000C8 b=00000013 alu=000000C9
-
-  tick=   112 phase=  Fetch pc=0007 ir=19ACA000   ADD
-
-  tick=   113 phase=Execute pc=0008 ir=05CD0000    LW a=000000C9 b=00000007
-
-  tick=   114 phase=  Fetch pc=0008 ir=05CD0000    LW
-
-  tick=   115 phase=Execute pc=0009 ir=09C007F4    SW a=000000D0 b=00000007
-
-  tick=   116 phase=  Fetch pc=0009 ir=09C007F4    SW
-
-  tick=   117 phase=Execute pc=000A ir=52940001  ADDI a=00000000 b=00000007 alu=FFFFFFF4
-
-  tick=   118 phase=  Fetch pc=000A ir=52940001  ADDI
-
-  tick=   119 phase=Execute pc=000B ir=A0000004     J
-
-  tick=   120 phase=  Fetch pc=0004 ir=A0000004     J
-
-  tick=   121 phase=Execute pc=0005 ir=94149806   BGE a=00000007 b=00000007
-
-  tick=   122 phase=  Fetch pc=0005 ir=94149806   BGE
-
-  tick=   123 phase=Execute pc=0006 ir=51920001  ADDI a=00000008 b=00000013 alu=00000008
-
-  tick=   124 phase=  Fetch pc=0006 ir=51920001  ADDI
-
-  tick=   125 phase=Execute pc=0007 ir=19ACA000   ADD a=000000C8 b=00000013 alu=000000C9
-
-  tick=   126 phase=  Fetch pc=0007 ir=19ACA000   ADD
-
-  tick=   127 phase=Execute pc=0008 ir=05CD0000    LW a=000000C9 b=00000008
-
-  tick=   128 phase=  Fetch pc=0008 ir=05CD0000    LW
-
-  tick=   129 phase=Execute pc=0009 ir=09C007F4    SW a=000000D1 b=00000008
-
-  tick=   130 phase=  Fetch pc=0009 ir=09C007F4    SW
-
-  tick=   131 phase=Execute pc=000A ir=52940001  ADDI a=00000000 b=00000008 alu=FFFFFFF4
-
-  tick=   132 phase=  Fetch pc=000A ir=52940001  ADDI
-
-  tick=   133 phase=Execute pc=000B ir=A0000004     J
-
-  tick=   134 phase=  Fetch pc=0004 ir=A0000004     J
-
-  tick=   135 phase=Execute pc=0005 ir=94149806   BGE a=00000008 b=00000008
-
-  tick=   136 phase=  Fetch pc=0005 ir=94149806   BGE
-
-  tick=   137 phase=Execute pc=0006 ir=51920001  ADDI a=00000009 b=00000013 alu=00000009
-
-  tick=   138 phase=  Fetch pc=0006 ir=51920001  ADDI
-
-  tick=   139 phase=Execute pc=0007 ir=19ACA000   ADD a=000000C8 b=00000013 alu=000000C9
-
-  tick=   140 phase=  Fetch pc=0007 ir=19ACA000   ADD
-
-  tick=   141 phase=Execute pc=0008 ir=05CD0000    LW a=000000C9 b=00000009
-
-  tick=   142 phase=  Fetch pc=0008 ir=05CD0000    LW
-
-  tick=   143 phase=Execute pc=0009 ir=09C007F4    SW a=000000D2 b=00000009
-
-  tick=   144 phase=  Fetch pc=0009 ir=09C007F4    SW
-
-  tick=   145 phase=Execute pc=000A ir=52940001  ADDI a=00000000 b=00000009 alu=FFFFFFF4
-
-  tick=   146 phase=  Fetch pc=000A ir=52940001  ADDI
-
-  tick=   147 phase=Execute pc=000B ir=A0000004     J
-
-  tick=   148 phase=  Fetch pc=0004 ir=A0000004     J
-
-  tick=   149 phase=Execute pc=0005 ir=94149806   BGE a=00000009 b=00000009
-
-  tick=   150 phase=  Fetch pc=0005 ir=94149806   BGE
-
-  tick=   151 phase=Execute pc=0006 ir=51920001  ADDI a=0000000A b=00000013 alu=0000000A
-
-  tick=   152 phase=  Fetch pc=0006 ir=51920001  ADDI
-
-  tick=   153 phase=Execute pc=0007 ir=19ACA000   ADD a=000000C8 b=00000013 alu=000000C9
-
-  tick=   154 phase=  Fetch pc=0007 ir=19ACA000   ADD
-
-  tick=   155 phase=Execute pc=0008 ir=05CD0000    LW a=000000C9 b=0000000A
-
-  tick=   156 phase=  Fetch pc=0008 ir=05CD0000    LW
-
-  tick=   157 phase=Execute pc=0009 ir=09C007F4    SW a=000000D3 b=0000000A
-
-  tick=   158 phase=  Fetch pc=0009 ir=09C007F4    SW
-
-  tick=   159 phase=Execute pc=000A ir=52940001  ADDI a=00000000 b=0000000A alu=FFFFFFF4
-
-  tick=   160 phase=  Fetch pc=000A ir=52940001  ADDI
-
-  tick=   161 phase=Execute pc=000B ir=A0000004     J
-
-  tick=   162 phase=  Fetch pc=0004 ir=A0000004     J
-
-  tick=   163 phase=Execute pc=0005 ir=94149806   BGE a=0000000A b=0000000A
-
-  tick=   164 phase=  Fetch pc=0005 ir=94149806   BGE
-
-  tick=   165 phase=Execute pc=0006 ir=51920001  ADDI a=0000000B b=00000013 alu=0000000B
-
-  tick=   166 phase=  Fetch pc=0006 ir=51920001  ADDI
-
-  tick=   167 phase=Execute pc=0007 ir=19ACA000   ADD a=000000C8 b=00000013 alu=000000C9
-
-  tick=   168 phase=  Fetch pc=0007 ir=19ACA000   ADD
-
-  tick=   169 phase=Execute pc=0008 ir=05CD0000    LW a=000000C9 b=0000000B
-
-  tick=   170 phase=  Fetch pc=0008 ir=05CD0000    LW
-
-  tick=   171 phase=Execute pc=0009 ir=09C007F4    SW a=000000D4 b=0000000B
-
-  tick=   172 phase=  Fetch pc=0009 ir=09C007F4    SW
-
-  tick=   173 phase=Execute pc=000A ir=52940001  ADDI a=00000000 b=0000000B alu=FFFFFFF4
-
-  tick=   174 phase=  Fetch pc=000A ir=52940001  ADDI
-
-  tick=   175 phase=Execute pc=000B ir=A0000004     J
-
-  tick=   176 phase=  Fetch pc=0004 ir=A0000004     J
-
-  tick=   177 phase=Execute pc=0005 ir=94149806   BGE a=0000000B b=0000000B
-
-  tick=   178 phase=  Fetch pc=0005 ir=94149806   BGE
-
-  tick=   179 phase=Execute pc=0006 ir=51920001  ADDI a=0000000C b=00000013 alu=0000000C
-
-  tick=   180 phase=  Fetch pc=0006 ir=51920001  ADDI
-
-  tick=   181 phase=Execute pc=0007 ir=19ACA000   ADD a=000000C8 b=00000013 alu=000000C9
-
-  tick=   182 phase=  Fetch pc=0007 ir=19ACA000   ADD
-
-  tick=   183 phase=Execute pc=0008 ir=05CD0000    LW a=000000C9 b=0000000C
-
-  tick=   184 phase=  Fetch pc=0008 ir=05CD0000    LW
-
-  tick=   185 phase=Execute pc=0009 ir=09C007F4    SW a=000000D5 b=0000000C
-
-  tick=   186 phase=  Fetch pc=0009 ir=09C007F4    SW
-
-  tick=   187 phase=Execute pc=000A ir=52940001  ADDI a=00000000 b=0000000C alu=FFFFFFF4
-
-  tick=   188 phase=  Fetch pc=000A ir=52940001  ADDI
-
-  tick=   189 phase=Execute pc=000B ir=A0000004     J
-
-  tick=   190 phase=  Fetch pc=0004 ir=A0000004     J
-
-  tick=   191 phase=Execute pc=0005 ir=94149806   BGE a=0000000C b=0000000C
-
-  tick=   192 phase=  Fetch pc=0005 ir=94149806   BGE
-
-  tick=   193 phase=Execute pc=0006 ir=51920001  ADDI a=0000000D b=00000013 alu=0000000D
-
-  tick=   194 phase=  Fetch pc=0006 ir=51920001  ADDI
-
-  tick=   195 phase=Execute pc=0007 ir=19ACA000   ADD a=000000C8 b=00000013 alu=000000C9
-
-  tick=   196 phase=  Fetch pc=0007 ir=19ACA000   ADD
-
-  tick=   197 phase=Execute pc=0008 ir=05CD0000    LW a=000000C9 b=0000000D
-
-  tick=   198 phase=  Fetch pc=0008 ir=05CD0000    LW
-
-  tick=   199 phase=Execute pc=0009 ir=09C007F4    SW a=000000D6 b=0000000D
-
-  tick=   200 phase=  Fetch pc=0009 ir=09C007F4    SW
-
-  tick=   201 phase=Execute pc=000A ir=52940001  ADDI a=00000000 b=0000000D alu=FFFFFFF4
-
-  tick=   202 phase=  Fetch pc=000A ir=52940001  ADDI
-
-  tick=   203 phase=Execute pc=000B ir=A0000004     J
-
-  tick=   204 phase=  Fetch pc=0004 ir=A0000004     J
-
-  tick=   205 phase=Execute pc=0005 ir=94149806   BGE a=0000000D b=0000000D
-
-  tick=   206 phase=  Fetch pc=0005 ir=94149806   BGE
-
-  tick=   207 phase=Execute pc=0006 ir=51920001  ADDI a=0000000E b=00000013 alu=0000000E
-
-  tick=   208 phase=  Fetch pc=0006 ir=51920001  ADDI
-
-  tick=   209 phase=Execute pc=0007 ir=19ACA000   ADD a=000000C8 b=00000013 alu=000000C9
-
-  tick=   210 phase=  Fetch pc=0007 ir=19ACA000   ADD
-
-  tick=   211 phase=Execute pc=0008 ir=05CD0000    LW a=000000C9 b=0000000E
-
-  tick=   212 phase=  Fetch pc=0008 ir=05CD0000    LW
-
-  tick=   213 phase=Execute pc=0009 ir=09C007F4    SW a=000000D7 b=0000000E
-
-  tick=   214 phase=  Fetch pc=0009 ir=09C007F4    SW
-
-  tick=   215 phase=Execute pc=000A ir=52940001  ADDI a=00000000 b=0000000E alu=FFFFFFF4
-
-  tick=   216 phase=  Fetch pc=000A ir=52940001  ADDI
-
-  tick=   217 phase=Execute pc=000B ir=A0000004     J
-
-  tick=   218 phase=  Fetch pc=0004 ir=A0000004     J
-
-  tick=   219 phase=Execute pc=0005 ir=94149806   BGE a=0000000E b=0000000E
-
-  tick=   220 phase=  Fetch pc=0005 ir=94149806   BGE
-
-  tick=   221 phase=Execute pc=0006 ir=51920001  ADDI a=0000000F b=00000013 alu=0000000F
-
-  tick=   222 phase=  Fetch pc=0006 ir=51920001  ADDI
-
-  tick=   223 phase=Execute pc=0007 ir=19ACA000   ADD a=000000C8 b=00000013 alu=000000C9
-
-  tick=   224 phase=  Fetch pc=0007 ir=19ACA000   ADD
-
-  tick=   225 phase=Execute pc=0008 ir=05CD0000    LW a=000000C9 b=0000000F
-
-  tick=   226 phase=  Fetch pc=0008 ir=05CD0000    LW
-
-  tick=   227 phase=Execute pc=0009 ir=09C007F4    SW a=000000D8 b=0000000F
-
-  tick=   228 phase=  Fetch pc=0009 ir=09C007F4    SW
-
-  tick=   229 phase=Execute pc=000A ir=52940001  ADDI a=00000000 b=0000000F alu=FFFFFFF4
-
-  tick=   230 phase=  Fetch pc=000A ir=52940001  ADDI
-
-  tick=   231 phase=Execute pc=000B ir=A0000004     J
-
-  tick=   232 phase=  Fetch pc=0004 ir=A0000004     J
-
-  tick=   233 phase=Execute pc=0005 ir=94149806   BGE a=0000000F b=0000000F
-
-  tick=   234 phase=  Fetch pc=0005 ir=94149806   BGE
-
-  tick=   235 phase=Execute pc=0006 ir=51920001  ADDI a=00000010 b=00000013 alu=00000010
-
-  tick=   236 phase=  Fetch pc=0006 ir=51920001  ADDI
-
-  tick=   237 phase=Execute pc=0007 ir=19ACA000   ADD a=000000C8 b=00000013 alu=000000C9
-
-  tick=   238 phase=  Fetch pc=0007 ir=19ACA000   ADD
-
-  tick=   239 phase=Execute pc=0008 ir=05CD0000    LW a=000000C9 b=00000010
-
-  tick=   240 phase=  Fetch pc=0008 ir=05CD0000    LW
-
-  tick=   241 phase=Execute pc=0009 ir=09C007F4    SW a=000000D9 b=00000010
-
-  tick=   242 phase=  Fetch pc=0009 ir=09C007F4    SW
-
-  tick=   243 phase=Execute pc=000A ir=52940001  ADDI a=00000000 b=00000010 alu=FFFFFFF4
-
-  tick=   244 phase=  Fetch pc=000A ir=52940001  ADDI
-
-  tick=   245 phase=Execute pc=000B ir=A0000004     J
-
-  tick=   246 phase=  Fetch pc=0004 ir=A0000004     J
-
-  tick=   247 phase=Execute pc=0005 ir=94149806   BGE a=00000010 b=00000010
-
-  tick=   248 phase=  Fetch pc=0005 ir=94149806   BGE
-
-  tick=   249 phase=Execute pc=0006 ir=51920001  ADDI a=00000011 b=00000013 alu=00000011
-
-  tick=   250 phase=  Fetch pc=0006 ir=51920001  ADDI
-
-  tick=   251 phase=Execute pc=0007 ir=19ACA000   ADD a=000000C8 b=00000013 alu=000000C9
-
-  tick=   252 phase=  Fetch pc=0007 ir=19ACA000   ADD
-
-  tick=   253 phase=Execute pc=0008 ir=05CD0000    LW a=000000C9 b=00000011
-
-  tick=   254 phase=  Fetch pc=0008 ir=05CD0000    LW
-
-  tick=   255 phase=Execute pc=0009 ir=09C007F4    SW a=000000DA b=00000011
-
-  tick=   256 phase=  Fetch pc=0009 ir=09C007F4    SW
-
-  tick=   257 phase=Execute pc=000A ir=52940001  ADDI a=00000000 b=00000011 alu=FFFFFFF4
-
-  tick=   258 phase=  Fetch pc=000A ir=52940001  ADDI
-
-  tick=   259 phase=Execute pc=000B ir=A0000004     J
-
-  tick=   260 phase=  Fetch pc=0004 ir=A0000004     J
-
-  tick=   261 phase=Execute pc=0005 ir=94149806   BGE a=00000011 b=00000011
-
-  tick=   262 phase=  Fetch pc=0005 ir=94149806   BGE
-
-  tick=   263 phase=Execute pc=0006 ir=51920001  ADDI a=00000012 b=00000013 alu=00000012
-
-  tick=   264 phase=  Fetch pc=0006 ir=51920001  ADDI
-
-  tick=   265 phase=Execute pc=0007 ir=19ACA000   ADD a=000000C8 b=00000013 alu=000000C9
-
-  tick=   266 phase=  Fetch pc=0007 ir=19ACA000   ADD
-
-  tick=   267 phase=Execute pc=0008 ir=05CD0000    LW a=000000C9 b=00000012
-
-  tick=   268 phase=  Fetch pc=0008 ir=05CD0000    LW
-
-  tick=   269 phase=Execute pc=0009 ir=09C007F4    SW a=000000DB b=00000012
-
-  tick=   270 phase=  Fetch pc=0009 ir=09C007F4    SW
-
-  tick=   271 phase=Execute pc=000A ir=52940001  ADDI a=00000000 b=00000012 alu=FFFFFFF4
-
-  tick=   272 phase=  Fetch pc=000A ir=52940001  ADDI
-
-  tick=   273 phase=Execute pc=000B ir=A0000004     J
-
-  tick=   274 phase=  Fetch pc=0004 ir=A0000004     J
-
-  tick=   275 phase=Execute pc=0005 ir=94149806   BGE a=00000012 b=00000012
-
-  tick=   276 phase=  Fetch pc=000B ir=94149806   BGE
-
-  tick=   277 phase=Execute pc=000C ir=52A000F0  ADDI a=00000013 b=00000013 alu=00000013
-
-  tick=   278 phase=  Fetch pc=000C ir=52A000F0  ADDI
-
-  tick=   279 phase=Execute pc=000D ir=52C00000  ADDI a=00000000 b=00000013 alu=000000F0
-
-  tick=   280 phase=  Fetch pc=000D ir=52C00000  ADDI
-
-  tick=   281 phase=Execute pc=000E ir=058007F0    LW a=00000000 b=00000013
-
-  tick=   282 phase=  Fetch pc=000E ir=058007F0    LW
-
-  tick=   283 phase=Execute pc=000F ir=800C0007   BEQ a=00000000 b=00000013
-
-  tick=   284 phase=  Fetch pc=000F ir=800C0007   BEQ
-
-  tick=   285 phase=Execute pc=0010 ir=51A0000A  ADDI a=00000041 b=00000000 alu=FFFFFFF0
-
-  tick=   286 phase=  Fetch pc=0010 ir=51A0000A  ADDI
-
-  tick=   287 phase=Execute pc=0011 ir=800C6805   BEQ a=00000000 b=00000000
-
-  tick=   288 phase=  Fetch pc=0011 ir=800C6805   BEQ
-
-  tick=   289 phase=Execute pc=0012 ir=51D50001  ADDI a=00000041 b=0000000A alu=0000000A
-
-  tick=   290 phase=  Fetch pc=0012 ir=51D50001  ADDI
-
-  tick=   291 phase=Execute pc=0013 ir=19EEB000   ADD a=000000F0 b=0000000A alu=000000F1
-
-  tick=   292 phase=  Fetch pc=0013 ir=19EEB000   ADD
-
-  tick=   293 phase=Execute pc=0014 ir=098F0000    SW a=000000F1 b=00000000
-
-  tick=   294 phase=  Fetch pc=0014 ir=098F0000    SW
-
-  tick=   295 phase=Execute pc=0015 ir=52D60001  ADDI a=000000F1 b=00000000 alu=000000F1
-
-  tick=   296 phase=  Fetch pc=0015 ir=52D60001  ADDI
-
-  tick=   297 phase=Execute pc=0016 ir=A000000D     J
-
-  tick=   298 phase=  Fetch pc=000D ir=A000000D     J
-
-  tick=   299 phase=Execute pc=000E ir=058007F0    LW a=00000000 b=00000000
-
-  tick=   300 phase=  Fetch pc=000E ir=058007F0    LW
-
-  tick=   301 phase=Execute pc=000F ir=800C0007   BEQ a=00000000 b=00000000
-
-  tick=   302 phase=  Fetch pc=000F ir=800C0007   BEQ
-
-  tick=   303 phase=Execute pc=0010 ir=51A0000A  ADDI a=0000006C b=00000000 alu=FFFFFFF0
-
-  tick=   304 phase=  Fetch pc=0010 ir=51A0000A  ADDI
-
-  tick=   305 phase=Execute pc=0011 ir=800C6805   BEQ a=00000000 b=00000000
-
-  tick=   306 phase=  Fetch pc=0011 ir=800C6805   BEQ
-
-  tick=   307 phase=Execute pc=0012 ir=51D50001  ADDI a=0000006C b=0000000A alu=0000000A
-
-  tick=   308 phase=  Fetch pc=0012 ir=51D50001  ADDI
-
-  tick=   309 phase=Execute pc=0013 ir=19EEB000   ADD a=000000F0 b=0000000A alu=000000F1
-
-  tick=   310 phase=  Fetch pc=0013 ir=19EEB000   ADD
-
-  tick=   311 phase=Execute pc=0014 ir=098F0000    SW a=000000F1 b=00000001
-
-  tick=   312 phase=  Fetch pc=0014 ir=098F0000    SW
-
-  tick=   313 phase=Execute pc=0015 ir=52D60001  ADDI a=000000F2 b=00000001 alu=000000F2
-
-  tick=   314 phase=  Fetch pc=0015 ir=52D60001  ADDI
-
-  tick=   315 phase=Execute pc=0016 ir=A000000D     J
-
-  tick=   316 phase=  Fetch pc=000D ir=A000000D     J
-
-  tick=   317 phase=Execute pc=000E ir=058007F0    LW a=00000001 b=00000001
-
-  tick=   318 phase=  Fetch pc=000E ir=058007F0    LW
-
-  tick=   319 phase=Execute pc=000F ir=800C0007   BEQ a=00000000 b=00000001
-
-  tick=   320 phase=  Fetch pc=000F ir=800C0007   BEQ
-
-  tick=   321 phase=Execute pc=0010 ir=51A0000A  ADDI a=00000069 b=00000000 alu=FFFFFFF0
-
-  tick=   322 phase=  Fetch pc=0010 ir=51A0000A  ADDI
-
-  tick=   323 phase=Execute pc=0011 ir=800C6805   BEQ a=00000000 b=00000000
-
-  tick=   324 phase=  Fetch pc=0011 ir=800C6805   BEQ
-
-  tick=   325 phase=Execute pc=0012 ir=51D50001  ADDI a=00000069 b=0000000A alu=0000000A
-
-  tick=   326 phase=  Fetch pc=0012 ir=51D50001  ADDI
-
-  tick=   327 phase=Execute pc=0013 ir=19EEB000   ADD a=000000F0 b=0000000A alu=000000F1
-
-  tick=   328 phase=  Fetch pc=0013 ir=19EEB000   ADD
-
-  tick=   329 phase=Execute pc=0014 ir=098F0000    SW a=000000F1 b=00000002
-
-  tick=   330 phase=  Fetch pc=0014 ir=098F0000    SW
-
-  tick=   331 phase=Execute pc=0015 ir=52D60001  ADDI a=000000F3 b=00000002 alu=000000F3
-
-  tick=   332 phase=  Fetch pc=0015 ir=52D60001  ADDI
-
-  tick=   333 phase=Execute pc=0016 ir=A000000D     J
-
-  tick=   334 phase=  Fetch pc=000D ir=A000000D     J
-
-  tick=   335 phase=Execute pc=000E ir=058007F0    LW a=00000002 b=00000002
-
-  tick=   336 phase=  Fetch pc=000E ir=058007F0    LW
-
-  tick=   337 phase=Execute pc=000F ir=800C0007   BEQ a=00000000 b=00000002
-
-  tick=   338 phase=  Fetch pc=000F ir=800C0007   BEQ
-
-  tick=   339 phase=Execute pc=0010 ir=51A0000A  ADDI a=00000063 b=00000000 alu=FFFFFFF0
-
-  tick=   340 phase=  Fetch pc=0010 ir=51A0000A  ADDI
-
-  tick=   341 phase=Execute pc=0011 ir=800C6805   BEQ a=00000000 b=00000000
-
-  tick=   342 phase=  Fetch pc=0011 ir=800C6805   BEQ
-
-  tick=   343 phase=Execute pc=0012 ir=51D50001  ADDI a=00000063 b=0000000A alu=0000000A
-
-  tick=   344 phase=  Fetch pc=0012 ir=51D50001  ADDI
-
-  tick=   345 phase=Execute pc=0013 ir=19EEB000   ADD a=000000F0 b=0000000A alu=000000F1
-
-  tick=   346 phase=  Fetch pc=0013 ir=19EEB000   ADD
-
-  tick=   347 phase=Execute pc=0014 ir=098F0000    SW a=000000F1 b=00000003
-
-  tick=   348 phase=  Fetch pc=0014 ir=098F0000    SW
-
-  tick=   349 phase=Execute pc=0015 ir=52D60001  ADDI a=000000F4 b=00000003 alu=000000F4
-
-  tick=   350 phase=  Fetch pc=0015 ir=52D60001  ADDI
-
-  tick=   351 phase=Execute pc=0016 ir=A000000D     J
-
-  tick=   352 phase=  Fetch pc=000D ir=A000000D     J
-
-  tick=   353 phase=Execute pc=000E ir=058007F0    LW a=00000003 b=00000003
-
-  tick=   354 phase=  Fetch pc=000E ir=058007F0    LW
-
-  tick=   355 phase=Execute pc=000F ir=800C0007   BEQ a=00000000 b=00000003
-
-  tick=   356 phase=  Fetch pc=000F ir=800C0007   BEQ
-
-  tick=   357 phase=Execute pc=0010 ir=51A0000A  ADDI a=00000065 b=00000000 alu=FFFFFFF0
-
-  tick=   358 phase=  Fetch pc=0010 ir=51A0000A  ADDI
-
-  tick=   359 phase=Execute pc=0011 ir=800C6805   BEQ a=00000000 b=00000000
-
-  tick=   360 phase=  Fetch pc=0011 ir=800C6805   BEQ
-
-  tick=   361 phase=Execute pc=0012 ir=51D50001  ADDI a=00000065 b=0000000A alu=0000000A
-
-  tick=   362 phase=  Fetch pc=0012 ir=51D50001  ADDI
-
-  tick=   363 phase=Execute pc=0013 ir=19EEB000   ADD a=000000F0 b=0000000A alu=000000F1
-
-  tick=   364 phase=  Fetch pc=0013 ir=19EEB000   ADD
-
-  tick=   365 phase=Execute pc=0014 ir=098F0000    SW a=000000F1 b=00000004
-
-  tick=   366 phase=  Fetch pc=0014 ir=098F0000    SW
-
-  tick=   367 phase=Execute pc=0015 ir=52D60001  ADDI a=000000F5 b=00000004 alu=000000F5
-
-  tick=   368 phase=  Fetch pc=0015 ir=52D60001  ADDI
-
-  tick=   369 phase=Execute pc=0016 ir=A000000D     J
-
-  tick=   370 phase=  Fetch pc=000D ir=A000000D     J
-
-  tick=   371 phase=Execute pc=000E ir=058007F0    LW a=00000004 b=00000004
-
-  tick=   372 phase=  Fetch pc=000E ir=058007F0    LW
-
-  tick=   373 phase=Execute pc=000F ir=800C0007   BEQ a=00000000 b=00000004
-
-  tick=   374 phase=  Fetch pc=000F ir=800C0007   BEQ
-
-  tick=   375 phase=Execute pc=0010 ir=51A0000A  ADDI a=0000000A b=00000000 alu=FFFFFFF0
-
-  tick=   376 phase=  Fetch pc=0010 ir=51A0000A  ADDI
-
-  tick=   377 phase=Execute pc=0011 ir=800C6805   BEQ a=00000000 b=00000000
-
-  tick=   378 phase=  Fetch pc=0016 ir=800C6805   BEQ
-
-  tick=   379 phase=Execute pc=0017 ir=0AD50000    SW a=0000000A b=0000000A
-
-  tick=   380 phase=  Fetch pc=0017 ir=0AD50000    SW
-
-  tick=   381 phase=Execute pc=0018 ir=524000DC  ADDI a=000000F0 b=0000000A alu=000000F0
-
-  tick=   382 phase=  Fetch pc=0018 ir=524000DC  ADDI
-
-  tick=   383 phase=Execute pc=0019 ir=06720000    LW a=00000000 b=0000000A
-
-  tick=   384 phase=  Fetch pc=0019 ir=06720000    LW
-
-  tick=   385 phase=Execute pc=001A ir=52800000  ADDI a=000000DC b=0000000A alu=000000DC
-
-  tick=   386 phase=  Fetch pc=001A ir=52800000  ADDI
-
-  tick=   387 phase=Execute pc=001B ir=94149806   BGE a=00000000 b=0000000A
-
-  tick=   388 phase=  Fetch pc=001B ir=94149806   BGE
-
-  tick=   389 phase=Execute pc=001C ir=51920001  ADDI a=00000000 b=00000007 alu=00000000
-
-  tick=   390 phase=  Fetch pc=001C ir=51920001  ADDI
-
-  tick=   391 phase=Execute pc=001D ir=19ACA000   ADD a=000000DC b=00000007 alu=000000DD
-
-  tick=   392 phase=  Fetch pc=001D ir=19ACA000   ADD
-
-  tick=   393 phase=Execute pc=001E ir=05CD0000    LW a=000000DD b=00000000
-
-  tick=   394 phase=  Fetch pc=001E ir=05CD0000    LW
-
-  tick=   395 phase=Execute pc=001F ir=09C007F4    SW a=000000DD b=00000000
-
-  tick=   396 phase=  Fetch pc=001F ir=09C007F4    SW
-
-  tick=   397 phase=Execute pc=0020 ir=52940001  ADDI a=00000000 b=00000000 alu=FFFFFFF4
-
-  tick=   398 phase=  Fetch pc=0020 ir=52940001  ADDI
-
-  tick=   399 phase=Execute pc=0021 ir=A000001A     J
-
-  tick=   400 phase=  Fetch pc=001A ir=A000001A     J
-
-  tick=   401 phase=Execute pc=001B ir=94149806   BGE a=00000000 b=00000000
-
-  tick=   402 phase=  Fetch pc=001B ir=94149806   BGE
-
-  tick=   403 phase=Execute pc=001C ir=51920001  ADDI a=00000001 b=00000007 alu=00000001
-
-  tick=   404 phase=  Fetch pc=001C ir=51920001  ADDI
-
-  tick=   405 phase=Execute pc=001D ir=19ACA000   ADD a=000000DC b=00000007 alu=000000DD
-
-  tick=   406 phase=  Fetch pc=001D ir=19ACA000   ADD
-
-  tick=   407 phase=Execute pc=001E ir=05CD0000    LW a=000000DD b=00000001
-
-  tick=   408 phase=  Fetch pc=001E ir=05CD0000    LW
-
-  tick=   409 phase=Execute pc=001F ir=09C007F4    SW a=000000DE b=00000001
-
-  tick=   410 phase=  Fetch pc=001F ir=09C007F4    SW
-
-  tick=   411 phase=Execute pc=0020 ir=52940001  ADDI a=00000000 b=00000001 alu=FFFFFFF4
-
-  tick=   412 phase=  Fetch pc=0020 ir=52940001  ADDI
-
-  tick=   413 phase=Execute pc=0021 ir=A000001A     J
-
-  tick=   414 phase=  Fetch pc=001A ir=A000001A     J
-
-  tick=   415 phase=Execute pc=001B ir=94149806   BGE a=00000001 b=00000001
-
-  tick=   416 phase=  Fetch pc=001B ir=94149806   BGE
-
-  tick=   417 phase=Execute pc=001C ir=51920001  ADDI a=00000002 b=00000007 alu=00000002
-
-  tick=   418 phase=  Fetch pc=001C ir=51920001  ADDI
-
-  tick=   419 phase=Execute pc=001D ir=19ACA000   ADD a=000000DC b=00000007 alu=000000DD
-
-  tick=   420 phase=  Fetch pc=001D ir=19ACA000   ADD
-
-  tick=   421 phase=Execute pc=001E ir=05CD0000    LW a=000000DD b=00000002
-
-  tick=   422 phase=  Fetch pc=001E ir=05CD0000    LW
-
-  tick=   423 phase=Execute pc=001F ir=09C007F4    SW a=000000DF b=00000002
-
-  tick=   424 phase=  Fetch pc=001F ir=09C007F4    SW
-
-  tick=   425 phase=Execute pc=0020 ir=52940001  ADDI a=00000000 b=00000002 alu=FFFFFFF4
-
-  tick=   426 phase=  Fetch pc=0020 ir=52940001  ADDI
-
-  tick=   427 phase=Execute pc=0021 ir=A000001A     J
-
-  tick=   428 phase=  Fetch pc=001A ir=A000001A     J
-
-  tick=   429 phase=Execute pc=001B ir=94149806   BGE a=00000002 b=00000002
-
-  tick=   430 phase=  Fetch pc=001B ir=94149806   BGE
-
-  tick=   431 phase=Execute pc=001C ir=51920001  ADDI a=00000003 b=00000007 alu=00000003
-
-  tick=   432 phase=  Fetch pc=001C ir=51920001  ADDI
-
-  tick=   433 phase=Execute pc=001D ir=19ACA000   ADD a=000000DC b=00000007 alu=000000DD
-
-  tick=   434 phase=  Fetch pc=001D ir=19ACA000   ADD
-
-  tick=   435 phase=Execute pc=001E ir=05CD0000    LW a=000000DD b=00000003
-
-  tick=   436 phase=  Fetch pc=001E ir=05CD0000    LW
-
-  tick=   437 phase=Execute pc=001F ir=09C007F4    SW a=000000E0 b=00000003
-
-  tick=   438 phase=  Fetch pc=001F ir=09C007F4    SW
-
-  tick=   439 phase=Execute pc=0020 ir=52940001  ADDI a=00000000 b=00000003 alu=FFFFFFF4
-
-  tick=   440 phase=  Fetch pc=0020 ir=52940001  ADDI
-
-  tick=   441 phase=Execute pc=0021 ir=A000001A     J
-
-  tick=   442 phase=  Fetch pc=001A ir=A000001A     J
-
-  tick=   443 phase=Execute pc=001B ir=94149806   BGE a=00000003 b=00000003
-
-  tick=   444 phase=  Fetch pc=001B ir=94149806   BGE
-
-  tick=   445 phase=Execute pc=001C ir=51920001  ADDI a=00000004 b=00000007 alu=00000004
-
-  tick=   446 phase=  Fetch pc=001C ir=51920001  ADDI
-
-  tick=   447 phase=Execute pc=001D ir=19ACA000   ADD a=000000DC b=00000007 alu=000000DD
-
-  tick=   448 phase=  Fetch pc=001D ir=19ACA000   ADD
-
-  tick=   449 phase=Execute pc=001E ir=05CD0000    LW a=000000DD b=00000004
-
-  tick=   450 phase=  Fetch pc=001E ir=05CD0000    LW
-
-  tick=   451 phase=Execute pc=001F ir=09C007F4    SW a=000000E1 b=00000004
-
-  tick=   452 phase=  Fetch pc=001F ir=09C007F4    SW
-
-  tick=   453 phase=Execute pc=0020 ir=52940001  ADDI a=00000000 b=00000004 alu=FFFFFFF4
-
-  tick=   454 phase=  Fetch pc=0020 ir=52940001  ADDI
-
-  tick=   455 phase=Execute pc=0021 ir=A000001A     J
-
-  tick=   456 phase=  Fetch pc=001A ir=A000001A     J
-
-  tick=   457 phase=Execute pc=001B ir=94149806   BGE a=00000004 b=00000004
-
-  tick=   458 phase=  Fetch pc=001B ir=94149806   BGE
-
-  tick=   459 phase=Execute pc=001C ir=51920001  ADDI a=00000005 b=00000007 alu=00000005
-
-  tick=   460 phase=  Fetch pc=001C ir=51920001  ADDI
-
-  tick=   461 phase=Execute pc=001D ir=19ACA000   ADD a=000000DC b=00000007 alu=000000DD
-
-  tick=   462 phase=  Fetch pc=001D ir=19ACA000   ADD
-
-  tick=   463 phase=Execute pc=001E ir=05CD0000    LW a=000000DD b=00000005
-
-  tick=   464 phase=  Fetch pc=001E ir=05CD0000    LW
-
-  tick=   465 phase=Execute pc=001F ir=09C007F4    SW a=000000E2 b=00000005
-
-  tick=   466 phase=  Fetch pc=001F ir=09C007F4    SW
-
-  tick=   467 phase=Execute pc=0020 ir=52940001  ADDI a=00000000 b=00000005 alu=FFFFFFF4
-
-  tick=   468 phase=  Fetch pc=0020 ir=52940001  ADDI
-
-  tick=   469 phase=Execute pc=0021 ir=A000001A     J
-
-  tick=   470 phase=  Fetch pc=001A ir=A000001A     J
-
-  tick=   471 phase=Execute pc=001B ir=94149806   BGE a=00000005 b=00000005
-
-  tick=   472 phase=  Fetch pc=001B ir=94149806   BGE
-
-  tick=   473 phase=Execute pc=001C ir=51920001  ADDI a=00000006 b=00000007 alu=00000006
-
-  tick=   474 phase=  Fetch pc=001C ir=51920001  ADDI
-
-  tick=   475 phase=Execute pc=001D ir=19ACA000   ADD a=000000DC b=00000007 alu=000000DD
-
-  tick=   476 phase=  Fetch pc=001D ir=19ACA000   ADD
-
-  tick=   477 phase=Execute pc=001E ir=05CD0000    LW a=000000DD b=00000006
-
-  tick=   478 phase=  Fetch pc=001E ir=05CD0000    LW
-
-  tick=   479 phase=Execute pc=001F ir=09C007F4    SW a=000000E3 b=00000006
-
-  tick=   480 phase=  Fetch pc=001F ir=09C007F4    SW
-
-  tick=   481 phase=Execute pc=0020 ir=52940001  ADDI a=00000000 b=00000006 alu=FFFFFFF4
-
-  tick=   482 phase=  Fetch pc=0020 ir=52940001  ADDI
-
-  tick=   483 phase=Execute pc=0021 ir=A000001A     J
-
-  tick=   484 phase=  Fetch pc=001A ir=A000001A     J
-
-  tick=   485 phase=Execute pc=001B ir=94149806   BGE a=00000006 b=00000006
-
-  tick=   486 phase=  Fetch pc=0021 ir=94149806   BGE
-
-  tick=   487 phase=Execute pc=0022 ir=52800000  ADDI a=00000007 b=00000007 alu=00000007
-
-  tick=   488 phase=  Fetch pc=0022 ir=52800000  ADDI
-
-  tick=   489 phase=Execute pc=0023 ir=9414B006   BGE a=00000000 b=00000007
-
-  tick=   490 phase=  Fetch pc=0023 ir=9414B006   BGE
-
-  tick=   491 phase=Execute pc=0024 ir=51950001  ADDI a=00000000 b=00000005 alu=00000000
-
-  tick=   492 phase=  Fetch pc=0024 ir=51950001  ADDI
-
-  tick=   493 phase=Execute pc=0025 ir=19ACA000   ADD a=000000F0 b=00000005 alu=000000F1
-
-  tick=   494 phase=  Fetch pc=0025 ir=19ACA000   ADD
-
-  tick=   495 phase=Execute pc=0026 ir=05CD0000    LW a=000000F1 b=00000000
-
-  tick=   496 phase=  Fetch pc=0026 ir=05CD0000    LW
-
-  tick=   497 phase=Execute pc=0027 ir=09C007F4    SW a=000000F1 b=00000000
-
-  tick=   498 phase=  Fetch pc=0027 ir=09C007F4    SW
-
-  tick=   499 phase=Execute pc=0028 ir=52940001  ADDI a=00000000 b=00000000 alu=FFFFFFF4
-
-  tick=   500 phase=  Fetch pc=0028 ir=52940001  ADDI
-
-  tick=   501 phase=Execute pc=0029 ir=A0000022     J
-
-  tick=   502 phase=  Fetch pc=0022 ir=A0000022     J
-
-  tick=   503 phase=Execute pc=0023 ir=9414B006   BGE a=00000000 b=00000000
-
-  tick=   504 phase=  Fetch pc=0023 ir=9414B006   BGE
-
-  tick=   505 phase=Execute pc=0024 ir=51950001  ADDI a=00000001 b=00000005 alu=00000001
-
-  tick=   506 phase=  Fetch pc=0024 ir=51950001  ADDI
-
-  tick=   507 phase=Execute pc=0025 ir=19ACA000   ADD a=000000F0 b=00000005 alu=000000F1
-
-  tick=   508 phase=  Fetch pc=0025 ir=19ACA000   ADD
-
-  tick=   509 phase=Execute pc=0026 ir=05CD0000    LW a=000000F1 b=00000001
-
-  tick=   510 phase=  Fetch pc=0026 ir=05CD0000    LW
-
-  tick=   511 phase=Execute pc=0027 ir=09C007F4    SW a=000000F2 b=00000001
-
-  tick=   512 phase=  Fetch pc=0027 ir=09C007F4    SW
-
-  tick=   513 phase=Execute pc=0028 ir=52940001  ADDI a=00000000 b=00000001 alu=FFFFFFF4
-
-  tick=   514 phase=  Fetch pc=0028 ir=52940001  ADDI
-
-  tick=   515 phase=Execute pc=0029 ir=A0000022     J
-
-  tick=   516 phase=  Fetch pc=0022 ir=A0000022     J
-
-  tick=   517 phase=Execute pc=0023 ir=9414B006   BGE a=00000001 b=00000001
-
-  tick=   518 phase=  Fetch pc=0023 ir=9414B006   BGE
-
-  tick=   519 phase=Execute pc=0024 ir=51950001  ADDI a=00000002 b=00000005 alu=00000002
-
-  tick=   520 phase=  Fetch pc=0024 ir=51950001  ADDI
-
-  tick=   521 phase=Execute pc=0025 ir=19ACA000   ADD a=000000F0 b=00000005 alu=000000F1
-
-  tick=   522 phase=  Fetch pc=0025 ir=19ACA000   ADD
-
-  tick=   523 phase=Execute pc=0026 ir=05CD0000    LW a=000000F1 b=00000002
-
-  tick=   524 phase=  Fetch pc=0026 ir=05CD0000    LW
-
-  tick=   525 phase=Execute pc=0027 ir=09C007F4    SW a=000000F3 b=00000002
-
-  tick=   526 phase=  Fetch pc=0027 ir=09C007F4    SW
-
-  tick=   527 phase=Execute pc=0028 ir=52940001  ADDI a=00000000 b=00000002 alu=FFFFFFF4
-
-  tick=   528 phase=  Fetch pc=0028 ir=52940001  ADDI
-
-  tick=   529 phase=Execute pc=0029 ir=A0000022     J
-
-  tick=   530 phase=  Fetch pc=0022 ir=A0000022     J
-
-  tick=   531 phase=Execute pc=0023 ir=9414B006   BGE a=00000002 b=00000002
-
-  tick=   532 phase=  Fetch pc=0023 ir=9414B006   BGE
-
-  tick=   533 phase=Execute pc=0024 ir=51950001  ADDI a=00000003 b=00000005 alu=00000003
-
-  tick=   534 phase=  Fetch pc=0024 ir=51950001  ADDI
-
-  tick=   535 phase=Execute pc=0025 ir=19ACA000   ADD a=000000F0 b=00000005 alu=000000F1
-
-  tick=   536 phase=  Fetch pc=0025 ir=19ACA000   ADD
-
-  tick=   537 phase=Execute pc=0026 ir=05CD0000    LW a=000000F1 b=00000003
-
-  tick=   538 phase=  Fetch pc=0026 ir=05CD0000    LW
-
-  tick=   539 phase=Execute pc=0027 ir=09C007F4    SW a=000000F4 b=00000003
-
-  tick=   540 phase=  Fetch pc=0027 ir=09C007F4    SW
-
-  tick=   541 phase=Execute pc=0028 ir=52940001  ADDI a=00000000 b=00000003 alu=FFFFFFF4
-
-  tick=   542 phase=  Fetch pc=0028 ir=52940001  ADDI
-
-  tick=   543 phase=Execute pc=0029 ir=A0000022     J
-
-  tick=   544 phase=  Fetch pc=0022 ir=A0000022     J
-
-  tick=   545 phase=Execute pc=0023 ir=9414B006   BGE a=00000003 b=00000003
-
-  tick=   546 phase=  Fetch pc=0023 ir=9414B006   BGE
-
-  tick=   547 phase=Execute pc=0024 ir=51950001  ADDI a=00000004 b=00000005 alu=00000004
-
-  tick=   548 phase=  Fetch pc=0024 ir=51950001  ADDI
-
-  tick=   549 phase=Execute pc=0025 ir=19ACA000   ADD a=000000F0 b=00000005 alu=000000F1
-
-  tick=   550 phase=  Fetch pc=0025 ir=19ACA000   ADD
-
-  tick=   551 phase=Execute pc=0026 ir=05CD0000    LW a=000000F1 b=00000004
-
-  tick=   552 phase=  Fetch pc=0026 ir=05CD0000    LW
-
-  tick=   553 phase=Execute pc=0027 ir=09C007F4    SW a=000000F5 b=00000004
-
-  tick=   554 phase=  Fetch pc=0027 ir=09C007F4    SW
-
-  tick=   555 phase=Execute pc=0028 ir=52940001  ADDI a=00000000 b=00000004 alu=FFFFFFF4
-
-  tick=   556 phase=  Fetch pc=0028 ir=52940001  ADDI
-
-  tick=   557 phase=Execute pc=0029 ir=A0000022     J
-
-  tick=   558 phase=  Fetch pc=0022 ir=A0000022     J
-
-  tick=   559 phase=Execute pc=0023 ir=9414B006   BGE a=00000004 b=00000004
-
-  tick=   560 phase=  Fetch pc=0029 ir=9414B006   BGE
-
-  tick=   561 phase=Execute pc=002A ir=51800021  ADDI a=00000005 b=00000005 alu=00000005
-
-  tick=   562 phase=  Fetch pc=002A ir=51800021  ADDI
-
-  tick=   563 phase=Execute pc=002B ir=098007F4    SW a=00000000 b=00000005
-
-  tick=   564 phase=  Fetch pc=002B ir=098007F4    SW
-
-  tick=   565 phase=Execute pc=002C ir=5180000A  ADDI a=00000000 b=00000005 alu=FFFFFFF4
-
-  tick=   566 phase=  Fetch pc=002C ir=5180000A  ADDI
-
-  tick=   567 phase=Execute pc=002D ir=098007F4    SW a=00000000 b=00000005
-
-  tick=   568 phase=  Fetch pc=002D ir=098007F4    SW
-
-  tick=   569 phase=Execute pc=002E ir=FC000000  HALT
-
-  tick=   570 phase=   Halt pc=002E ir=FC000000  HALT'
+out_lst: |
+          .org 0
+  0000 - 16400000 - LUI s0 0
+  0001 - 525200C8 - ADDI s0 s0 200
+  0002 - 06720000 - LW s1 s0 0
+  0003 - 52800000 - ADDI s2 zero 0
+  0004 - 94149806 - BGE s2 s1 read_name
+  0005 - 51920001 - ADDI t0 s0 1
+  0006 - 19ACA000 - ADD t1 t0 s2
+  0007 - 05CD0000 - LW t2 t1 0
+  0008 - 09C007F4 - SW t2 zero 0xFFF4
+  0009 - 52940001 - ADDI s2 s2 1
+  000A - A0000004 - J print_prompt
+  000B - 52A000F0 - ADDI s3 zero 240
+  000C - 52C00000 - ADDI s4 zero 0
+  000D - 058007F0 - LW t0 zero 0xFFF0
+  000E - 800C0007 - BEQ t0 zero print_hello
+  000F - 51A0000A - ADDI t1 zero 10
+  0010 - 800C6805 - BEQ t0 t1 print_hello
+  0011 - 51D50001 - ADDI t2 s3 1
+  0012 - 19EEB000 - ADD t3 t2 s4
+  0013 - 098F0000 - SW t0 t3 0
+  0014 - 52D60001 - ADDI s4 s4 1
+  0015 - A000000D - J read_loop
+  0016 - 0AD50000 - SW s4 s3 0
+  0017 - 524000DC - ADDI s0 zero 220
+  0018 - 06720000 - LW s1 s0 0
+  0019 - 52800000 - ADDI s2 zero 0
+  001A - 94149806 - BGE s2 s1 print_name_chars
+  001B - 51920001 - ADDI t0 s0 1
+  001C - 19ACA000 - ADD t1 t0 s2
+  001D - 05CD0000 - LW t2 t1 0
+  001E - 09C007F4 - SW t2 zero 0xFFF4
+  001F - 52940001 - ADDI s2 s2 1
+  0020 - A000001A - J print_hello_str
+  0021 - 52800000 - ADDI s2 zero 0
+  0022 - 9414B006 - BGE s2 s4 print_end
+  0023 - 51950001 - ADDI t0 s3 1
+  0024 - 19ACA000 - ADD t1 t0 s2
+  0025 - 05CD0000 - LW t2 t1 0
+  0026 - 09C007F4 - SW t2 zero 0xFFF4
+  0027 - 52940001 - ADDI s2 s2 1
+  0028 - A0000022 - J print_name_loop
+  0029 - 51800021 - ADDI t0 zero 33
+  002A - 098007F4 - SW t0 zero 0xFFF4
+  002B - 5180000A - ADDI t0 zero 10
+  002C - 098007F4 - SW t0 zero 0xFFF4
+  002D - FC000000 - HALT 
+          .org 200
+          .string "What is your name?\n"
+          .org 220
+          .string "Hello, "
+out_journal: |
+  TICK:      1 PHASE: EXECUTE PC: 0001 IR: 16400000 CMD:   LUI A: 00000000 B: 00000000 ALU: 00000000
+  TICK:      2 PHASE:   FETCH PC: 0001 IR: 16400000 CMD:   LUI
+  TICK:      3 PHASE: EXECUTE PC: 0002 IR: 525200C8 CMD:  ADDI A: 00000000 B: 00000000 ALU: 00000000
+  TICK:      4 PHASE:   FETCH PC: 0002 IR: 525200C8 CMD:  ADDI
+  TICK:      5 PHASE: EXECUTE PC: 0003 IR: 06720000 CMD:    LW A: 00000000 B: 00000000
+  TICK:      6 PHASE:   FETCH PC: 0003 IR: 06720000 CMD:    LW
+  TICK:      7 PHASE: EXECUTE PC: 0004 IR: 52800000 CMD:  ADDI A: 000000C8 B: 00000000 ALU: 000000C8
+  TICK:      8 PHASE:   FETCH PC: 0004 IR: 52800000 CMD:  ADDI
+  TICK:      9 PHASE: EXECUTE PC: 0005 IR: 94149806 CMD:   BGE A: 00000000 B: 00000000
+  TICK:     10 PHASE:   FETCH PC: 0005 IR: 94149806 CMD:   BGE
+  TICK:     11 PHASE: EXECUTE PC: 0006 IR: 51920001 CMD:  ADDI A: 00000000 B: 00000013 ALU: 00000000
+  TICK:     12 PHASE:   FETCH PC: 0006 IR: 51920001 CMD:  ADDI
+  TICK:     13 PHASE: EXECUTE PC: 0007 IR: 19ACA000 CMD:   ADD A: 000000C8 B: 00000013 ALU: 000000C9
+  TICK:     14 PHASE:   FETCH PC: 0007 IR: 19ACA000 CMD:   ADD
+  TICK:     15 PHASE: EXECUTE PC: 0008 IR: 05CD0000 CMD:    LW A: 000000C9 B: 00000000
+  TICK:     16 PHASE:   FETCH PC: 0008 IR: 05CD0000 CMD:    LW
+  TICK:     17 PHASE: EXECUTE PC: 0009 IR: 09C007F4 CMD:    SW A: 000000C9 B: 00000000
+  TICK:     18 PHASE:   FETCH PC: 0009 IR: 09C007F4 CMD:    SW
+  TICK:     19 PHASE: EXECUTE PC: 000A IR: 52940001 CMD:  ADDI A: 00000000 B: 00000000 ALU: FFFFFFF4
+  TICK:     20 PHASE:   FETCH PC: 000A IR: 52940001 CMD:  ADDI
+  TICK:     21 PHASE: EXECUTE PC: 000B IR: A0000004 CMD:     J
+  TICK:     22 PHASE:   FETCH PC: 0004 IR: A0000004 CMD:     J
+  TICK:     23 PHASE: EXECUTE PC: 0005 IR: 94149806 CMD:   BGE A: 00000000 B: 00000000
+  TICK:     24 PHASE:   FETCH PC: 0005 IR: 94149806 CMD:   BGE
+  TICK:     25 PHASE: EXECUTE PC: 0006 IR: 51920001 CMD:  ADDI A: 00000001 B: 00000013 ALU: 00000001
+  TICK:     26 PHASE:   FETCH PC: 0006 IR: 51920001 CMD:  ADDI
+  TICK:     27 PHASE: EXECUTE PC: 0007 IR: 19ACA000 CMD:   ADD A: 000000C8 B: 00000013 ALU: 000000C9
+  TICK:     28 PHASE:   FETCH PC: 0007 IR: 19ACA000 CMD:   ADD
+  TICK:     29 PHASE: EXECUTE PC: 0008 IR: 05CD0000 CMD:    LW A: 000000C9 B: 00000001
+  TICK:     30 PHASE:   FETCH PC: 0008 IR: 05CD0000 CMD:    LW
+  TICK:     31 PHASE: EXECUTE PC: 0009 IR: 09C007F4 CMD:    SW A: 000000CA B: 00000001
+  TICK:     32 PHASE:   FETCH PC: 0009 IR: 09C007F4 CMD:    SW
+  TICK:     33 PHASE: EXECUTE PC: 000A IR: 52940001 CMD:  ADDI A: 00000000 B: 00000001 ALU: FFFFFFF4
+  TICK:     34 PHASE:   FETCH PC: 000A IR: 52940001 CMD:  ADDI
+  TICK:     35 PHASE: EXECUTE PC: 000B IR: A0000004 CMD:     J
+  TICK:     36 PHASE:   FETCH PC: 0004 IR: A0000004 CMD:     J
+  TICK:     37 PHASE: EXECUTE PC: 0005 IR: 94149806 CMD:   BGE A: 00000001 B: 00000001
+  TICK:     38 PHASE:   FETCH PC: 0005 IR: 94149806 CMD:   BGE
+  TICK:     39 PHASE: EXECUTE PC: 0006 IR: 51920001 CMD:  ADDI A: 00000002 B: 00000013 ALU: 00000002
+  TICK:     40 PHASE:   FETCH PC: 0006 IR: 51920001 CMD:  ADDI
+  TICK:     41 PHASE: EXECUTE PC: 0007 IR: 19ACA000 CMD:   ADD A: 000000C8 B: 00000013 ALU: 000000C9
+  TICK:     42 PHASE:   FETCH PC: 0007 IR: 19ACA000 CMD:   ADD
+  TICK:     43 PHASE: EXECUTE PC: 0008 IR: 05CD0000 CMD:    LW A: 000000C9 B: 00000002
+  TICK:     44 PHASE:   FETCH PC: 0008 IR: 05CD0000 CMD:    LW
+  TICK:     45 PHASE: EXECUTE PC: 0009 IR: 09C007F4 CMD:    SW A: 000000CB B: 00000002
+  TICK:     46 PHASE:   FETCH PC: 0009 IR: 09C007F4 CMD:    SW
+  TICK:     47 PHASE: EXECUTE PC: 000A IR: 52940001 CMD:  ADDI A: 00000000 B: 00000002 ALU: FFFFFFF4
+  TICK:     48 PHASE:   FETCH PC: 000A IR: 52940001 CMD:  ADDI
+  TICK:     49 PHASE: EXECUTE PC: 000B IR: A0000004 CMD:     J
+  TICK:     50 PHASE:   FETCH PC: 0004 IR: A0000004 CMD:     J
+  TICK:     51 PHASE: EXECUTE PC: 0005 IR: 94149806 CMD:   BGE A: 00000002 B: 00000002
+  TICK:     52 PHASE:   FETCH PC: 0005 IR: 94149806 CMD:   BGE
+  TICK:     53 PHASE: EXECUTE PC: 0006 IR: 51920001 CMD:  ADDI A: 00000003 B: 00000013 ALU: 00000003
+  TICK:     54 PHASE:   FETCH PC: 0006 IR: 51920001 CMD:  ADDI
+  TICK:     55 PHASE: EXECUTE PC: 0007 IR: 19ACA000 CMD:   ADD A: 000000C8 B: 00000013 ALU: 000000C9
+  TICK:     56 PHASE:   FETCH PC: 0007 IR: 19ACA000 CMD:   ADD
+  TICK:     57 PHASE: EXECUTE PC: 0008 IR: 05CD0000 CMD:    LW A: 000000C9 B: 00000003
+  TICK:     58 PHASE:   FETCH PC: 0008 IR: 05CD0000 CMD:    LW
+  TICK:     59 PHASE: EXECUTE PC: 0009 IR: 09C007F4 CMD:    SW A: 000000CC B: 00000003
+  TICK:     60 PHASE:   FETCH PC: 0009 IR: 09C007F4 CMD:    SW
+  TICK:     61 PHASE: EXECUTE PC: 000A IR: 52940001 CMD:  ADDI A: 00000000 B: 00000003 ALU: FFFFFFF4
+  TICK:     62 PHASE:   FETCH PC: 000A IR: 52940001 CMD:  ADDI
+  TICK:     63 PHASE: EXECUTE PC: 000B IR: A0000004 CMD:     J
+  TICK:     64 PHASE:   FETCH PC: 0004 IR: A0000004 CMD:     J
+  TICK:     65 PHASE: EXECUTE PC: 0005 IR: 94149806 CMD:   BGE A: 00000003 B: 00000003
+  TICK:     66 PHASE:   FETCH PC: 0005 IR: 94149806 CMD:   BGE
+  TICK:     67 PHASE: EXECUTE PC: 0006 IR: 51920001 CMD:  ADDI A: 00000004 B: 00000013 ALU: 00000004
+  TICK:     68 PHASE:   FETCH PC: 0006 IR: 51920001 CMD:  ADDI
+  TICK:     69 PHASE: EXECUTE PC: 0007 IR: 19ACA000 CMD:   ADD A: 000000C8 B: 00000013 ALU: 000000C9
+  TICK:     70 PHASE:   FETCH PC: 0007 IR: 19ACA000 CMD:   ADD
+  TICK:     71 PHASE: EXECUTE PC: 0008 IR: 05CD0000 CMD:    LW A: 000000C9 B: 00000004
+  TICK:     72 PHASE:   FETCH PC: 0008 IR: 05CD0000 CMD:    LW
+  TICK:     73 PHASE: EXECUTE PC: 0009 IR: 09C007F4 CMD:    SW A: 000000CD B: 00000004
+  TICK:     74 PHASE:   FETCH PC: 0009 IR: 09C007F4 CMD:    SW
+  TICK:     75 PHASE: EXECUTE PC: 000A IR: 52940001 CMD:  ADDI A: 00000000 B: 00000004 ALU: FFFFFFF4
+  TICK:     76 PHASE:   FETCH PC: 000A IR: 52940001 CMD:  ADDI
+  TICK:     77 PHASE: EXECUTE PC: 000B IR: A0000004 CMD:     J
+  TICK:     78 PHASE:   FETCH PC: 0004 IR: A0000004 CMD:     J
+  TICK:     79 PHASE: EXECUTE PC: 0005 IR: 94149806 CMD:   BGE A: 00000004 B: 00000004
+  TICK:     80 PHASE:   FETCH PC: 0005 IR: 94149806 CMD:   BGE
+  TICK:     81 PHASE: EXECUTE PC: 0006 IR: 51920001 CMD:  ADDI A: 00000005 B: 00000013 ALU: 00000005
+  TICK:     82 PHASE:   FETCH PC: 0006 IR: 51920001 CMD:  ADDI
+  TICK:     83 PHASE: EXECUTE PC: 0007 IR: 19ACA000 CMD:   ADD A: 000000C8 B: 00000013 ALU: 000000C9
+  TICK:     84 PHASE:   FETCH PC: 0007 IR: 19ACA000 CMD:   ADD
+  TICK:     85 PHASE: EXECUTE PC: 0008 IR: 05CD0000 CMD:    LW A: 000000C9 B: 00000005
+  TICK:     86 PHASE:   FETCH PC: 0008 IR: 05CD0000 CMD:    LW
+  TICK:     87 PHASE: EXECUTE PC: 0009 IR: 09C007F4 CMD:    SW A: 000000CE B: 00000005
+  TICK:     88 PHASE:   FETCH PC: 0009 IR: 09C007F4 CMD:    SW
+  TICK:     89 PHASE: EXECUTE PC: 000A IR: 52940001 CMD:  ADDI A: 00000000 B: 00000005 ALU: FFFFFFF4
+  TICK:     90 PHASE:   FETCH PC: 000A IR: 52940001 CMD:  ADDI
+  TICK:     91 PHASE: EXECUTE PC: 000B IR: A0000004 CMD:     J
+  TICK:     92 PHASE:   FETCH PC: 0004 IR: A0000004 CMD:     J
+  TICK:     93 PHASE: EXECUTE PC: 0005 IR: 94149806 CMD:   BGE A: 00000005 B: 00000005
+  TICK:     94 PHASE:   FETCH PC: 0005 IR: 94149806 CMD:   BGE
+  TICK:     95 PHASE: EXECUTE PC: 0006 IR: 51920001 CMD:  ADDI A: 00000006 B: 00000013 ALU: 00000006
+  TICK:     96 PHASE:   FETCH PC: 0006 IR: 51920001 CMD:  ADDI
+  TICK:     97 PHASE: EXECUTE PC: 0007 IR: 19ACA000 CMD:   ADD A: 000000C8 B: 00000013 ALU: 000000C9
+  TICK:     98 PHASE:   FETCH PC: 0007 IR: 19ACA000 CMD:   ADD
+  TICK:     99 PHASE: EXECUTE PC: 0008 IR: 05CD0000 CMD:    LW A: 000000C9 B: 00000006
+  TICK:    100 PHASE:   FETCH PC: 0008 IR: 05CD0000 CMD:    LW
+  TICK:    101 PHASE: EXECUTE PC: 0009 IR: 09C007F4 CMD:    SW A: 000000CF B: 00000006
+  TICK:    102 PHASE:   FETCH PC: 0009 IR: 09C007F4 CMD:    SW
+  TICK:    103 PHASE: EXECUTE PC: 000A IR: 52940001 CMD:  ADDI A: 00000000 B: 00000006 ALU: FFFFFFF4
+  TICK:    104 PHASE:   FETCH PC: 000A IR: 52940001 CMD:  ADDI
+  TICK:    105 PHASE: EXECUTE PC: 000B IR: A0000004 CMD:     J
+  TICK:    106 PHASE:   FETCH PC: 0004 IR: A0000004 CMD:     J
+  TICK:    107 PHASE: EXECUTE PC: 0005 IR: 94149806 CMD:   BGE A: 00000006 B: 00000006
+  TICK:    108 PHASE:   FETCH PC: 0005 IR: 94149806 CMD:   BGE
+  TICK:    109 PHASE: EXECUTE PC: 0006 IR: 51920001 CMD:  ADDI A: 00000007 B: 00000013 ALU: 00000007
+  TICK:    110 PHASE:   FETCH PC: 0006 IR: 51920001 CMD:  ADDI
+  TICK:    111 PHASE: EXECUTE PC: 0007 IR: 19ACA000 CMD:   ADD A: 000000C8 B: 00000013 ALU: 000000C9
+  TICK:    112 PHASE:   FETCH PC: 0007 IR: 19ACA000 CMD:   ADD
+  TICK:    113 PHASE: EXECUTE PC: 0008 IR: 05CD0000 CMD:    LW A: 000000C9 B: 00000007
+  TICK:    114 PHASE:   FETCH PC: 0008 IR: 05CD0000 CMD:    LW
+  TICK:    115 PHASE: EXECUTE PC: 0009 IR: 09C007F4 CMD:    SW A: 000000D0 B: 00000007
+  TICK:    116 PHASE:   FETCH PC: 0009 IR: 09C007F4 CMD:    SW
+  TICK:    117 PHASE: EXECUTE PC: 000A IR: 52940001 CMD:  ADDI A: 00000000 B: 00000007 ALU: FFFFFFF4
+  TICK:    118 PHASE:   FETCH PC: 000A IR: 52940001 CMD:  ADDI
+  TICK:    119 PHASE: EXECUTE PC: 000B IR: A0000004 CMD:     J
+  TICK:    120 PHASE:   FETCH PC: 0004 IR: A0000004 CMD:     J
+  TICK:    121 PHASE: EXECUTE PC: 0005 IR: 94149806 CMD:   BGE A: 00000007 B: 00000007
+  TICK:    122 PHASE:   FETCH PC: 0005 IR: 94149806 CMD:   BGE
+  TICK:    123 PHASE: EXECUTE PC: 0006 IR: 51920001 CMD:  ADDI A: 00000008 B: 00000013 ALU: 00000008
+  TICK:    124 PHASE:   FETCH PC: 0006 IR: 51920001 CMD:  ADDI
+  TICK:    125 PHASE: EXECUTE PC: 0007 IR: 19ACA000 CMD:   ADD A: 000000C8 B: 00000013 ALU: 000000C9
+  TICK:    126 PHASE:   FETCH PC: 0007 IR: 19ACA000 CMD:   ADD
+  TICK:    127 PHASE: EXECUTE PC: 0008 IR: 05CD0000 CMD:    LW A: 000000C9 B: 00000008
+  TICK:    128 PHASE:   FETCH PC: 0008 IR: 05CD0000 CMD:    LW
+  TICK:    129 PHASE: EXECUTE PC: 0009 IR: 09C007F4 CMD:    SW A: 000000D1 B: 00000008
+  TICK:    130 PHASE:   FETCH PC: 0009 IR: 09C007F4 CMD:    SW
+  TICK:    131 PHASE: EXECUTE PC: 000A IR: 52940001 CMD:  ADDI A: 00000000 B: 00000008 ALU: FFFFFFF4
+  TICK:    132 PHASE:   FETCH PC: 000A IR: 52940001 CMD:  ADDI
+  TICK:    133 PHASE: EXECUTE PC: 000B IR: A0000004 CMD:     J
+  TICK:    134 PHASE:   FETCH PC: 0004 IR: A0000004 CMD:     J
+  TICK:    135 PHASE: EXECUTE PC: 0005 IR: 94149806 CMD:   BGE A: 00000008 B: 00000008
+  TICK:    136 PHASE:   FETCH PC: 0005 IR: 94149806 CMD:   BGE
+  TICK:    137 PHASE: EXECUTE PC: 0006 IR: 51920001 CMD:  ADDI A: 00000009 B: 00000013 ALU: 00000009
+  TICK:    138 PHASE:   FETCH PC: 0006 IR: 51920001 CMD:  ADDI
+  TICK:    139 PHASE: EXECUTE PC: 0007 IR: 19ACA000 CMD:   ADD A: 000000C8 B: 00000013 ALU: 000000C9
+  TICK:    140 PHASE:   FETCH PC: 0007 IR: 19ACA000 CMD:   ADD
+  TICK:    141 PHASE: EXECUTE PC: 0008 IR: 05CD0000 CMD:    LW A: 000000C9 B: 00000009
+  TICK:    142 PHASE:   FETCH PC: 0008 IR: 05CD0000 CMD:    LW
+  TICK:    143 PHASE: EXECUTE PC: 0009 IR: 09C007F4 CMD:    SW A: 000000D2 B: 00000009
+  TICK:    144 PHASE:   FETCH PC: 0009 IR: 09C007F4 CMD:    SW
+  TICK:    145 PHASE: EXECUTE PC: 000A IR: 52940001 CMD:  ADDI A: 00000000 B: 00000009 ALU: FFFFFFF4
+  TICK:    146 PHASE:   FETCH PC: 000A IR: 52940001 CMD:  ADDI
+  TICK:    147 PHASE: EXECUTE PC: 000B IR: A0000004 CMD:     J
+  TICK:    148 PHASE:   FETCH PC: 0004 IR: A0000004 CMD:     J
+  TICK:    149 PHASE: EXECUTE PC: 0005 IR: 94149806 CMD:   BGE A: 00000009 B: 00000009
+  TICK:    150 PHASE:   FETCH PC: 0005 IR: 94149806 CMD:   BGE
+  TICK:    151 PHASE: EXECUTE PC: 0006 IR: 51920001 CMD:  ADDI A: 0000000A B: 00000013 ALU: 0000000A
+  TICK:    152 PHASE:   FETCH PC: 0006 IR: 51920001 CMD:  ADDI
+  TICK:    153 PHASE: EXECUTE PC: 0007 IR: 19ACA000 CMD:   ADD A: 000000C8 B: 00000013 ALU: 000000C9
+  TICK:    154 PHASE:   FETCH PC: 0007 IR: 19ACA000 CMD:   ADD
+  TICK:    155 PHASE: EXECUTE PC: 0008 IR: 05CD0000 CMD:    LW A: 000000C9 B: 0000000A
+  TICK:    156 PHASE:   FETCH PC: 0008 IR: 05CD0000 CMD:    LW
+  TICK:    157 PHASE: EXECUTE PC: 0009 IR: 09C007F4 CMD:    SW A: 000000D3 B: 0000000A
+  TICK:    158 PHASE:   FETCH PC: 0009 IR: 09C007F4 CMD:    SW
+  TICK:    159 PHASE: EXECUTE PC: 000A IR: 52940001 CMD:  ADDI A: 00000000 B: 0000000A ALU: FFFFFFF4
+  TICK:    160 PHASE:   FETCH PC: 000A IR: 52940001 CMD:  ADDI
+  TICK:    161 PHASE: EXECUTE PC: 000B IR: A0000004 CMD:     J
+  TICK:    162 PHASE:   FETCH PC: 0004 IR: A0000004 CMD:     J
+  TICK:    163 PHASE: EXECUTE PC: 0005 IR: 94149806 CMD:   BGE A: 0000000A B: 0000000A
+  TICK:    164 PHASE:   FETCH PC: 0005 IR: 94149806 CMD:   BGE
+  TICK:    165 PHASE: EXECUTE PC: 0006 IR: 51920001 CMD:  ADDI A: 0000000B B: 00000013 ALU: 0000000B
+  TICK:    166 PHASE:   FETCH PC: 0006 IR: 51920001 CMD:  ADDI
+  TICK:    167 PHASE: EXECUTE PC: 0007 IR: 19ACA000 CMD:   ADD A: 000000C8 B: 00000013 ALU: 000000C9
+  TICK:    168 PHASE:   FETCH PC: 0007 IR: 19ACA000 CMD:   ADD
+  TICK:    169 PHASE: EXECUTE PC: 0008 IR: 05CD0000 CMD:    LW A: 000000C9 B: 0000000B
+  TICK:    170 PHASE:   FETCH PC: 0008 IR: 05CD0000 CMD:    LW
+  TICK:    171 PHASE: EXECUTE PC: 0009 IR: 09C007F4 CMD:    SW A: 000000D4 B: 0000000B
+  TICK:    172 PHASE:   FETCH PC: 0009 IR: 09C007F4 CMD:    SW
+  TICK:    173 PHASE: EXECUTE PC: 000A IR: 52940001 CMD:  ADDI A: 00000000 B: 0000000B ALU: FFFFFFF4
+  TICK:    174 PHASE:   FETCH PC: 000A IR: 52940001 CMD:  ADDI
+  TICK:    175 PHASE: EXECUTE PC: 000B IR: A0000004 CMD:     J
+  TICK:    176 PHASE:   FETCH PC: 0004 IR: A0000004 CMD:     J
+  TICK:    177 PHASE: EXECUTE PC: 0005 IR: 94149806 CMD:   BGE A: 0000000B B: 0000000B
+  TICK:    178 PHASE:   FETCH PC: 0005 IR: 94149806 CMD:   BGE
+  TICK:    179 PHASE: EXECUTE PC: 0006 IR: 51920001 CMD:  ADDI A: 0000000C B: 00000013 ALU: 0000000C
+  TICK:    180 PHASE:   FETCH PC: 0006 IR: 51920001 CMD:  ADDI
+  TICK:    181 PHASE: EXECUTE PC: 0007 IR: 19ACA000 CMD:   ADD A: 000000C8 B: 00000013 ALU: 000000C9
+  TICK:    182 PHASE:   FETCH PC: 0007 IR: 19ACA000 CMD:   ADD
+  TICK:    183 PHASE: EXECUTE PC: 0008 IR: 05CD0000 CMD:    LW A: 000000C9 B: 0000000C
+  TICK:    184 PHASE:   FETCH PC: 0008 IR: 05CD0000 CMD:    LW
+  TICK:    185 PHASE: EXECUTE PC: 0009 IR: 09C007F4 CMD:    SW A: 000000D5 B: 0000000C
+  TICK:    186 PHASE:   FETCH PC: 0009 IR: 09C007F4 CMD:    SW
+  TICK:    187 PHASE: EXECUTE PC: 000A IR: 52940001 CMD:  ADDI A: 00000000 B: 0000000C ALU: FFFFFFF4
+  TICK:    188 PHASE:   FETCH PC: 000A IR: 52940001 CMD:  ADDI
+  TICK:    189 PHASE: EXECUTE PC: 000B IR: A0000004 CMD:     J
+  TICK:    190 PHASE:   FETCH PC: 0004 IR: A0000004 CMD:     J
+  TICK:    191 PHASE: EXECUTE PC: 0005 IR: 94149806 CMD:   BGE A: 0000000C B: 0000000C
+  TICK:    192 PHASE:   FETCH PC: 0005 IR: 94149806 CMD:   BGE
+  TICK:    193 PHASE: EXECUTE PC: 0006 IR: 51920001 CMD:  ADDI A: 0000000D B: 00000013 ALU: 0000000D
+  TICK:    194 PHASE:   FETCH PC: 0006 IR: 51920001 CMD:  ADDI
+  TICK:    195 PHASE: EXECUTE PC: 0007 IR: 19ACA000 CMD:   ADD A: 000000C8 B: 00000013 ALU: 000000C9
+  TICK:    196 PHASE:   FETCH PC: 0007 IR: 19ACA000 CMD:   ADD
+  TICK:    197 PHASE: EXECUTE PC: 0008 IR: 05CD0000 CMD:    LW A: 000000C9 B: 0000000D
+  TICK:    198 PHASE:   FETCH PC: 0008 IR: 05CD0000 CMD:    LW
+  TICK:    199 PHASE: EXECUTE PC: 0009 IR: 09C007F4 CMD:    SW A: 000000D6 B: 0000000D
+  TICK:    200 PHASE:   FETCH PC: 0009 IR: 09C007F4 CMD:    SW
+  TICK:    201 PHASE: EXECUTE PC: 000A IR: 52940001 CMD:  ADDI A: 00000000 B: 0000000D ALU: FFFFFFF4
+  TICK:    202 PHASE:   FETCH PC: 000A IR: 52940001 CMD:  ADDI
+  TICK:    203 PHASE: EXECUTE PC: 000B IR: A0000004 CMD:     J
+  TICK:    204 PHASE:   FETCH PC: 0004 IR: A0000004 CMD:     J
+  TICK:    205 PHASE: EXECUTE PC: 0005 IR: 94149806 CMD:   BGE A: 0000000D B: 0000000D
+  TICK:    206 PHASE:   FETCH PC: 0005 IR: 94149806 CMD:   BGE
+  TICK:    207 PHASE: EXECUTE PC: 0006 IR: 51920001 CMD:  ADDI A: 0000000E B: 00000013 ALU: 0000000E
+  TICK:    208 PHASE:   FETCH PC: 0006 IR: 51920001 CMD:  ADDI
+  TICK:    209 PHASE: EXECUTE PC: 0007 IR: 19ACA000 CMD:   ADD A: 000000C8 B: 00000013 ALU: 000000C9
+  TICK:    210 PHASE:   FETCH PC: 0007 IR: 19ACA000 CMD:   ADD
+  TICK:    211 PHASE: EXECUTE PC: 0008 IR: 05CD0000 CMD:    LW A: 000000C9 B: 0000000E
+  TICK:    212 PHASE:   FETCH PC: 0008 IR: 05CD0000 CMD:    LW
+  TICK:    213 PHASE: EXECUTE PC: 0009 IR: 09C007F4 CMD:    SW A: 000000D7 B: 0000000E
+  TICK:    214 PHASE:   FETCH PC: 0009 IR: 09C007F4 CMD:    SW
+  TICK:    215 PHASE: EXECUTE PC: 000A IR: 52940001 CMD:  ADDI A: 00000000 B: 0000000E ALU: FFFFFFF4
+  TICK:    216 PHASE:   FETCH PC: 000A IR: 52940001 CMD:  ADDI
+  TICK:    217 PHASE: EXECUTE PC: 000B IR: A0000004 CMD:     J
+  TICK:    218 PHASE:   FETCH PC: 0004 IR: A0000004 CMD:     J
+  TICK:    219 PHASE: EXECUTE PC: 0005 IR: 94149806 CMD:   BGE A: 0000000E B: 0000000E
+  TICK:    220 PHASE:   FETCH PC: 0005 IR: 94149806 CMD:   BGE
+  TICK:    221 PHASE: EXECUTE PC: 0006 IR: 51920001 CMD:  ADDI A: 0000000F B: 00000013 ALU: 0000000F
+  TICK:    222 PHASE:   FETCH PC: 0006 IR: 51920001 CMD:  ADDI
+  TICK:    223 PHASE: EXECUTE PC: 0007 IR: 19ACA000 CMD:   ADD A: 000000C8 B: 00000013 ALU: 000000C9
+  TICK:    224 PHASE:   FETCH PC: 0007 IR: 19ACA000 CMD:   ADD
+  TICK:    225 PHASE: EXECUTE PC: 0008 IR: 05CD0000 CMD:    LW A: 000000C9 B: 0000000F
+  TICK:    226 PHASE:   FETCH PC: 0008 IR: 05CD0000 CMD:    LW
+  TICK:    227 PHASE: EXECUTE PC: 0009 IR: 09C007F4 CMD:    SW A: 000000D8 B: 0000000F
+  TICK:    228 PHASE:   FETCH PC: 0009 IR: 09C007F4 CMD:    SW
+  TICK:    229 PHASE: EXECUTE PC: 000A IR: 52940001 CMD:  ADDI A: 00000000 B: 0000000F ALU: FFFFFFF4
+  TICK:    230 PHASE:   FETCH PC: 000A IR: 52940001 CMD:  ADDI
+  TICK:    231 PHASE: EXECUTE PC: 000B IR: A0000004 CMD:     J
+  TICK:    232 PHASE:   FETCH PC: 0004 IR: A0000004 CMD:     J
+  TICK:    233 PHASE: EXECUTE PC: 0005 IR: 94149806 CMD:   BGE A: 0000000F B: 0000000F
+  TICK:    234 PHASE:   FETCH PC: 0005 IR: 94149806 CMD:   BGE
+  TICK:    235 PHASE: EXECUTE PC: 0006 IR: 51920001 CMD:  ADDI A: 00000010 B: 00000013 ALU: 00000010
+  TICK:    236 PHASE:   FETCH PC: 0006 IR: 51920001 CMD:  ADDI
+  TICK:    237 PHASE: EXECUTE PC: 0007 IR: 19ACA000 CMD:   ADD A: 000000C8 B: 00000013 ALU: 000000C9
+  TICK:    238 PHASE:   FETCH PC: 0007 IR: 19ACA000 CMD:   ADD
+  TICK:    239 PHASE: EXECUTE PC: 0008 IR: 05CD0000 CMD:    LW A: 000000C9 B: 00000010
+  TICK:    240 PHASE:   FETCH PC: 0008 IR: 05CD0000 CMD:    LW
+  TICK:    241 PHASE: EXECUTE PC: 0009 IR: 09C007F4 CMD:    SW A: 000000D9 B: 00000010
+  TICK:    242 PHASE:   FETCH PC: 0009 IR: 09C007F4 CMD:    SW
+  TICK:    243 PHASE: EXECUTE PC: 000A IR: 52940001 CMD:  ADDI A: 00000000 B: 00000010 ALU: FFFFFFF4
+  TICK:    244 PHASE:   FETCH PC: 000A IR: 52940001 CMD:  ADDI
+  TICK:    245 PHASE: EXECUTE PC: 000B IR: A0000004 CMD:     J
+  TICK:    246 PHASE:   FETCH PC: 0004 IR: A0000004 CMD:     J
+  TICK:    247 PHASE: EXECUTE PC: 0005 IR: 94149806 CMD:   BGE A: 00000010 B: 00000010
+  TICK:    248 PHASE:   FETCH PC: 0005 IR: 94149806 CMD:   BGE
+  TICK:    249 PHASE: EXECUTE PC: 0006 IR: 51920001 CMD:  ADDI A: 00000011 B: 00000013 ALU: 00000011
+  TICK:    250 PHASE:   FETCH PC: 0006 IR: 51920001 CMD:  ADDI
+  TICK:    251 PHASE: EXECUTE PC: 0007 IR: 19ACA000 CMD:   ADD A: 000000C8 B: 00000013 ALU: 000000C9
+  TICK:    252 PHASE:   FETCH PC: 0007 IR: 19ACA000 CMD:   ADD
+  TICK:    253 PHASE: EXECUTE PC: 0008 IR: 05CD0000 CMD:    LW A: 000000C9 B: 00000011
+  TICK:    254 PHASE:   FETCH PC: 0008 IR: 05CD0000 CMD:    LW
+  TICK:    255 PHASE: EXECUTE PC: 0009 IR: 09C007F4 CMD:    SW A: 000000DA B: 00000011
+  TICK:    256 PHASE:   FETCH PC: 0009 IR: 09C007F4 CMD:    SW
+  TICK:    257 PHASE: EXECUTE PC: 000A IR: 52940001 CMD:  ADDI A: 00000000 B: 00000011 ALU: FFFFFFF4
+  TICK:    258 PHASE:   FETCH PC: 000A IR: 52940001 CMD:  ADDI
+  TICK:    259 PHASE: EXECUTE PC: 000B IR: A0000004 CMD:     J
+  TICK:    260 PHASE:   FETCH PC: 0004 IR: A0000004 CMD:     J
+  TICK:    261 PHASE: EXECUTE PC: 0005 IR: 94149806 CMD:   BGE A: 00000011 B: 00000011
+  TICK:    262 PHASE:   FETCH PC: 0005 IR: 94149806 CMD:   BGE
+  TICK:    263 PHASE: EXECUTE PC: 0006 IR: 51920001 CMD:  ADDI A: 00000012 B: 00000013 ALU: 00000012
+  TICK:    264 PHASE:   FETCH PC: 0006 IR: 51920001 CMD:  ADDI
+  TICK:    265 PHASE: EXECUTE PC: 0007 IR: 19ACA000 CMD:   ADD A: 000000C8 B: 00000013 ALU: 000000C9
+  TICK:    266 PHASE:   FETCH PC: 0007 IR: 19ACA000 CMD:   ADD
+  TICK:    267 PHASE: EXECUTE PC: 0008 IR: 05CD0000 CMD:    LW A: 000000C9 B: 00000012
+  TICK:    268 PHASE:   FETCH PC: 0008 IR: 05CD0000 CMD:    LW
+  TICK:    269 PHASE: EXECUTE PC: 0009 IR: 09C007F4 CMD:    SW A: 000000DB B: 00000012
+  TICK:    270 PHASE:   FETCH PC: 0009 IR: 09C007F4 CMD:    SW
+  TICK:    271 PHASE: EXECUTE PC: 000A IR: 52940001 CMD:  ADDI A: 00000000 B: 00000012 ALU: FFFFFFF4
+  TICK:    272 PHASE:   FETCH PC: 000A IR: 52940001 CMD:  ADDI
+  TICK:    273 PHASE: EXECUTE PC: 000B IR: A0000004 CMD:     J
+  TICK:    274 PHASE:   FETCH PC: 0004 IR: A0000004 CMD:     J
+  TICK:    275 PHASE: EXECUTE PC: 0005 IR: 94149806 CMD:   BGE A: 00000012 B: 00000012
+  TICK:    276 PHASE:   FETCH PC: 000B IR: 94149806 CMD:   BGE
+  TICK:    277 PHASE: EXECUTE PC: 000C IR: 52A000F0 CMD:  ADDI A: 00000013 B: 00000013 ALU: 00000013
+  TICK:    278 PHASE:   FETCH PC: 000C IR: 52A000F0 CMD:  ADDI
+  TICK:    279 PHASE: EXECUTE PC: 000D IR: 52C00000 CMD:  ADDI A: 00000000 B: 00000013 ALU: 000000F0
+  TICK:    280 PHASE:   FETCH PC: 000D IR: 52C00000 CMD:  ADDI
+  TICK:    281 PHASE: EXECUTE PC: 000E IR: 058007F0 CMD:    LW A: 00000000 B: 00000013
+  TICK:    282 PHASE:   FETCH PC: 000E IR: 058007F0 CMD:    LW
+  TICK:    283 PHASE: EXECUTE PC: 000F IR: 800C0007 CMD:   BEQ A: 00000000 B: 00000013
+  TICK:    284 PHASE:   FETCH PC: 000F IR: 800C0007 CMD:   BEQ
+  TICK:    285 PHASE: EXECUTE PC: 0010 IR: 51A0000A CMD:  ADDI A: 00000041 B: 00000000 ALU: FFFFFFF0
+  TICK:    286 PHASE:   FETCH PC: 0010 IR: 51A0000A CMD:  ADDI
+  TICK:    287 PHASE: EXECUTE PC: 0011 IR: 800C6805 CMD:   BEQ A: 00000000 B: 00000000
+  TICK:    288 PHASE:   FETCH PC: 0011 IR: 800C6805 CMD:   BEQ
+  TICK:    289 PHASE: EXECUTE PC: 0012 IR: 51D50001 CMD:  ADDI A: 00000041 B: 0000000A ALU: 0000000A
+  TICK:    290 PHASE:   FETCH PC: 0012 IR: 51D50001 CMD:  ADDI
+  TICK:    291 PHASE: EXECUTE PC: 0013 IR: 19EEB000 CMD:   ADD A: 000000F0 B: 0000000A ALU: 000000F1
+  TICK:    292 PHASE:   FETCH PC: 0013 IR: 19EEB000 CMD:   ADD
+  TICK:    293 PHASE: EXECUTE PC: 0014 IR: 098F0000 CMD:    SW A: 000000F1 B: 00000000
+  TICK:    294 PHASE:   FETCH PC: 0014 IR: 098F0000 CMD:    SW
+  TICK:    295 PHASE: EXECUTE PC: 0015 IR: 52D60001 CMD:  ADDI A: 000000F1 B: 00000000 ALU: 000000F1
+  TICK:    296 PHASE:   FETCH PC: 0015 IR: 52D60001 CMD:  ADDI
+  TICK:    297 PHASE: EXECUTE PC: 0016 IR: A000000D CMD:     J
+  TICK:    298 PHASE:   FETCH PC: 000D IR: A000000D CMD:     J
+  TICK:    299 PHASE: EXECUTE PC: 000E IR: 058007F0 CMD:    LW A: 00000000 B: 00000000
+  TICK:    300 PHASE:   FETCH PC: 000E IR: 058007F0 CMD:    LW
+  TICK:    301 PHASE: EXECUTE PC: 000F IR: 800C0007 CMD:   BEQ A: 00000000 B: 00000000
+  TICK:    302 PHASE:   FETCH PC: 000F IR: 800C0007 CMD:   BEQ
+  TICK:    303 PHASE: EXECUTE PC: 0010 IR: 51A0000A CMD:  ADDI A: 0000006C B: 00000000 ALU: FFFFFFF0
+  TICK:    304 PHASE:   FETCH PC: 0010 IR: 51A0000A CMD:  ADDI
+  TICK:    305 PHASE: EXECUTE PC: 0011 IR: 800C6805 CMD:   BEQ A: 00000000 B: 00000000
+  TICK:    306 PHASE:   FETCH PC: 0011 IR: 800C6805 CMD:   BEQ
+  TICK:    307 PHASE: EXECUTE PC: 0012 IR: 51D50001 CMD:  ADDI A: 0000006C B: 0000000A ALU: 0000000A
+  TICK:    308 PHASE:   FETCH PC: 0012 IR: 51D50001 CMD:  ADDI
+  TICK:    309 PHASE: EXECUTE PC: 0013 IR: 19EEB000 CMD:   ADD A: 000000F0 B: 0000000A ALU: 000000F1
+  TICK:    310 PHASE:   FETCH PC: 0013 IR: 19EEB000 CMD:   ADD
+  TICK:    311 PHASE: EXECUTE PC: 0014 IR: 098F0000 CMD:    SW A: 000000F1 B: 00000001
+  TICK:    312 PHASE:   FETCH PC: 0014 IR: 098F0000 CMD:    SW
+  TICK:    313 PHASE: EXECUTE PC: 0015 IR: 52D60001 CMD:  ADDI A: 000000F2 B: 00000001 ALU: 000000F2
+  TICK:    314 PHASE:   FETCH PC: 0015 IR: 52D60001 CMD:  ADDI
+  TICK:    315 PHASE: EXECUTE PC: 0016 IR: A000000D CMD:     J
+  TICK:    316 PHASE:   FETCH PC: 000D IR: A000000D CMD:     J
+  TICK:    317 PHASE: EXECUTE PC: 000E IR: 058007F0 CMD:    LW A: 00000001 B: 00000001
+  TICK:    318 PHASE:   FETCH PC: 000E IR: 058007F0 CMD:    LW
+  TICK:    319 PHASE: EXECUTE PC: 000F IR: 800C0007 CMD:   BEQ A: 00000000 B: 00000001
+  TICK:    320 PHASE:   FETCH PC: 000F IR: 800C0007 CMD:   BEQ
+  TICK:    321 PHASE: EXECUTE PC: 0010 IR: 51A0000A CMD:  ADDI A: 00000069 B: 00000000 ALU: FFFFFFF0
+  TICK:    322 PHASE:   FETCH PC: 0010 IR: 51A0000A CMD:  ADDI
+  TICK:    323 PHASE: EXECUTE PC: 0011 IR: 800C6805 CMD:   BEQ A: 00000000 B: 00000000
+  TICK:    324 PHASE:   FETCH PC: 0011 IR: 800C6805 CMD:   BEQ
+  TICK:    325 PHASE: EXECUTE PC: 0012 IR: 51D50001 CMD:  ADDI A: 00000069 B: 0000000A ALU: 0000000A
+  TICK:    326 PHASE:   FETCH PC: 0012 IR: 51D50001 CMD:  ADDI
+  TICK:    327 PHASE: EXECUTE PC: 0013 IR: 19EEB000 CMD:   ADD A: 000000F0 B: 0000000A ALU: 000000F1
+  TICK:    328 PHASE:   FETCH PC: 0013 IR: 19EEB000 CMD:   ADD
+  TICK:    329 PHASE: EXECUTE PC: 0014 IR: 098F0000 CMD:    SW A: 000000F1 B: 00000002
+  TICK:    330 PHASE:   FETCH PC: 0014 IR: 098F0000 CMD:    SW
+  TICK:    331 PHASE: EXECUTE PC: 0015 IR: 52D60001 CMD:  ADDI A: 000000F3 B: 00000002 ALU: 000000F3
+  TICK:    332 PHASE:   FETCH PC: 0015 IR: 52D60001 CMD:  ADDI
+  TICK:    333 PHASE: EXECUTE PC: 0016 IR: A000000D CMD:     J
+  TICK:    334 PHASE:   FETCH PC: 000D IR: A000000D CMD:     J
+  TICK:    335 PHASE: EXECUTE PC: 000E IR: 058007F0 CMD:    LW A: 00000002 B: 00000002
+  TICK:    336 PHASE:   FETCH PC: 000E IR: 058007F0 CMD:    LW
+  TICK:    337 PHASE: EXECUTE PC: 000F IR: 800C0007 CMD:   BEQ A: 00000000 B: 00000002
+  TICK:    338 PHASE:   FETCH PC: 000F IR: 800C0007 CMD:   BEQ
+  TICK:    339 PHASE: EXECUTE PC: 0010 IR: 51A0000A CMD:  ADDI A: 00000063 B: 00000000 ALU: FFFFFFF0
+  TICK:    340 PHASE:   FETCH PC: 0010 IR: 51A0000A CMD:  ADDI
+  TICK:    341 PHASE: EXECUTE PC: 0011 IR: 800C6805 CMD:   BEQ A: 00000000 B: 00000000
+  TICK:    342 PHASE:   FETCH PC: 0011 IR: 800C6805 CMD:   BEQ
+  TICK:    343 PHASE: EXECUTE PC: 0012 IR: 51D50001 CMD:  ADDI A: 00000063 B: 0000000A ALU: 0000000A
+  TICK:    344 PHASE:   FETCH PC: 0012 IR: 51D50001 CMD:  ADDI
+  TICK:    345 PHASE: EXECUTE PC: 0013 IR: 19EEB000 CMD:   ADD A: 000000F0 B: 0000000A ALU: 000000F1
+  TICK:    346 PHASE:   FETCH PC: 0013 IR: 19EEB000 CMD:   ADD
+  TICK:    347 PHASE: EXECUTE PC: 0014 IR: 098F0000 CMD:    SW A: 000000F1 B: 00000003
+  TICK:    348 PHASE:   FETCH PC: 0014 IR: 098F0000 CMD:    SW
+  TICK:    349 PHASE: EXECUTE PC: 0015 IR: 52D60001 CMD:  ADDI A: 000000F4 B: 00000003 ALU: 000000F4
+  TICK:    350 PHASE:   FETCH PC: 0015 IR: 52D60001 CMD:  ADDI
+  TICK:    351 PHASE: EXECUTE PC: 0016 IR: A000000D CMD:     J
+  TICK:    352 PHASE:   FETCH PC: 000D IR: A000000D CMD:     J
+  TICK:    353 PHASE: EXECUTE PC: 000E IR: 058007F0 CMD:    LW A: 00000003 B: 00000003
+  TICK:    354 PHASE:   FETCH PC: 000E IR: 058007F0 CMD:    LW
+  TICK:    355 PHASE: EXECUTE PC: 000F IR: 800C0007 CMD:   BEQ A: 00000000 B: 00000003
+  TICK:    356 PHASE:   FETCH PC: 000F IR: 800C0007 CMD:   BEQ
+  TICK:    357 PHASE: EXECUTE PC: 0010 IR: 51A0000A CMD:  ADDI A: 00000065 B: 00000000 ALU: FFFFFFF0
+  TICK:    358 PHASE:   FETCH PC: 0010 IR: 51A0000A CMD:  ADDI
+  TICK:    359 PHASE: EXECUTE PC: 0011 IR: 800C6805 CMD:   BEQ A: 00000000 B: 00000000
+  TICK:    360 PHASE:   FETCH PC: 0011 IR: 800C6805 CMD:   BEQ
+  TICK:    361 PHASE: EXECUTE PC: 0012 IR: 51D50001 CMD:  ADDI A: 00000065 B: 0000000A ALU: 0000000A
+  TICK:    362 PHASE:   FETCH PC: 0012 IR: 51D50001 CMD:  ADDI
+  TICK:    363 PHASE: EXECUTE PC: 0013 IR: 19EEB000 CMD:   ADD A: 000000F0 B: 0000000A ALU: 000000F1
+  TICK:    364 PHASE:   FETCH PC: 0013 IR: 19EEB000 CMD:   ADD
+  TICK:    365 PHASE: EXECUTE PC: 0014 IR: 098F0000 CMD:    SW A: 000000F1 B: 00000004
+  TICK:    366 PHASE:   FETCH PC: 0014 IR: 098F0000 CMD:    SW
+  TICK:    367 PHASE: EXECUTE PC: 0015 IR: 52D60001 CMD:  ADDI A: 000000F5 B: 00000004 ALU: 000000F5
+  TICK:    368 PHASE:   FETCH PC: 0015 IR: 52D60001 CMD:  ADDI
+  TICK:    369 PHASE: EXECUTE PC: 0016 IR: A000000D CMD:     J
+  TICK:    370 PHASE:   FETCH PC: 000D IR: A000000D CMD:     J
+  TICK:    371 PHASE: EXECUTE PC: 000E IR: 058007F0 CMD:    LW A: 00000004 B: 00000004
+  TICK:    372 PHASE:   FETCH PC: 000E IR: 058007F0 CMD:    LW
+  TICK:    373 PHASE: EXECUTE PC: 000F IR: 800C0007 CMD:   BEQ A: 00000000 B: 00000004
+  TICK:    374 PHASE:   FETCH PC: 000F IR: 800C0007 CMD:   BEQ
+  TICK:    375 PHASE: EXECUTE PC: 0010 IR: 51A0000A CMD:  ADDI A: 0000000A B: 00000000 ALU: FFFFFFF0
+  TICK:    376 PHASE:   FETCH PC: 0010 IR: 51A0000A CMD:  ADDI
+  TICK:    377 PHASE: EXECUTE PC: 0011 IR: 800C6805 CMD:   BEQ A: 00000000 B: 00000000
+  TICK:    378 PHASE:   FETCH PC: 0016 IR: 800C6805 CMD:   BEQ
+  TICK:    379 PHASE: EXECUTE PC: 0017 IR: 0AD50000 CMD:    SW A: 0000000A B: 0000000A
+  TICK:    380 PHASE:   FETCH PC: 0017 IR: 0AD50000 CMD:    SW
+  TICK:    381 PHASE: EXECUTE PC: 0018 IR: 524000DC CMD:  ADDI A: 000000F0 B: 0000000A ALU: 000000F0
+  TICK:    382 PHASE:   FETCH PC: 0018 IR: 524000DC CMD:  ADDI
+  TICK:    383 PHASE: EXECUTE PC: 0019 IR: 06720000 CMD:    LW A: 00000000 B: 0000000A
+  TICK:    384 PHASE:   FETCH PC: 0019 IR: 06720000 CMD:    LW
+  TICK:    385 PHASE: EXECUTE PC: 001A IR: 52800000 CMD:  ADDI A: 000000DC B: 0000000A ALU: 000000DC
+  TICK:    386 PHASE:   FETCH PC: 001A IR: 52800000 CMD:  ADDI
+  TICK:    387 PHASE: EXECUTE PC: 001B IR: 94149806 CMD:   BGE A: 00000000 B: 0000000A
+  TICK:    388 PHASE:   FETCH PC: 001B IR: 94149806 CMD:   BGE
+  TICK:    389 PHASE: EXECUTE PC: 001C IR: 51920001 CMD:  ADDI A: 00000000 B: 00000007 ALU: 00000000
+  TICK:    390 PHASE:   FETCH PC: 001C IR: 51920001 CMD:  ADDI
+  TICK:    391 PHASE: EXECUTE PC: 001D IR: 19ACA000 CMD:   ADD A: 000000DC B: 00000007 ALU: 000000DD
+  TICK:    392 PHASE:   FETCH PC: 001D IR: 19ACA000 CMD:   ADD
+  TICK:    393 PHASE: EXECUTE PC: 001E IR: 05CD0000 CMD:    LW A: 000000DD B: 00000000
+  TICK:    394 PHASE:   FETCH PC: 001E IR: 05CD0000 CMD:    LW
+  TICK:    395 PHASE: EXECUTE PC: 001F IR: 09C007F4 CMD:    SW A: 000000DD B: 00000000
+  TICK:    396 PHASE:   FETCH PC: 001F IR: 09C007F4 CMD:    SW
+  TICK:    397 PHASE: EXECUTE PC: 0020 IR: 52940001 CMD:  ADDI A: 00000000 B: 00000000 ALU: FFFFFFF4
+  TICK:    398 PHASE:   FETCH PC: 0020 IR: 52940001 CMD:  ADDI
+  TICK:    399 PHASE: EXECUTE PC: 0021 IR: A000001A CMD:     J
+  TICK:    400 PHASE:   FETCH PC: 001A IR: A000001A CMD:     J
+  TICK:    401 PHASE: EXECUTE PC: 001B IR: 94149806 CMD:   BGE A: 00000000 B: 00000000
+  TICK:    402 PHASE:   FETCH PC: 001B IR: 94149806 CMD:   BGE
+  TICK:    403 PHASE: EXECUTE PC: 001C IR: 51920001 CMD:  ADDI A: 00000001 B: 00000007 ALU: 00000001
+  TICK:    404 PHASE:   FETCH PC: 001C IR: 51920001 CMD:  ADDI
+  TICK:    405 PHASE: EXECUTE PC: 001D IR: 19ACA000 CMD:   ADD A: 000000DC B: 00000007 ALU: 000000DD
+  TICK:    406 PHASE:   FETCH PC: 001D IR: 19ACA000 CMD:   ADD
+  TICK:    407 PHASE: EXECUTE PC: 001E IR: 05CD0000 CMD:    LW A: 000000DD B: 00000001
+  TICK:    408 PHASE:   FETCH PC: 001E IR: 05CD0000 CMD:    LW
+  TICK:    409 PHASE: EXECUTE PC: 001F IR: 09C007F4 CMD:    SW A: 000000DE B: 00000001
+  TICK:    410 PHASE:   FETCH PC: 001F IR: 09C007F4 CMD:    SW
+  TICK:    411 PHASE: EXECUTE PC: 0020 IR: 52940001 CMD:  ADDI A: 00000000 B: 00000001 ALU: FFFFFFF4
+  TICK:    412 PHASE:   FETCH PC: 0020 IR: 52940001 CMD:  ADDI
+  TICK:    413 PHASE: EXECUTE PC: 0021 IR: A000001A CMD:     J
+  TICK:    414 PHASE:   FETCH PC: 001A IR: A000001A CMD:     J
+  TICK:    415 PHASE: EXECUTE PC: 001B IR: 94149806 CMD:   BGE A: 00000001 B: 00000001
+  TICK:    416 PHASE:   FETCH PC: 001B IR: 94149806 CMD:   BGE
+  TICK:    417 PHASE: EXECUTE PC: 001C IR: 51920001 CMD:  ADDI A: 00000002 B: 00000007 ALU: 00000002
+  TICK:    418 PHASE:   FETCH PC: 001C IR: 51920001 CMD:  ADDI
+  TICK:    419 PHASE: EXECUTE PC: 001D IR: 19ACA000 CMD:   ADD A: 000000DC B: 00000007 ALU: 000000DD
+  TICK:    420 PHASE:   FETCH PC: 001D IR: 19ACA000 CMD:   ADD
+  TICK:    421 PHASE: EXECUTE PC: 001E IR: 05CD0000 CMD:    LW A: 000000DD B: 00000002
+  TICK:    422 PHASE:   FETCH PC: 001E IR: 05CD0000 CMD:    LW
+  TICK:    423 PHASE: EXECUTE PC: 001F IR: 09C007F4 CMD:    SW A: 000000DF B: 00000002
+  TICK:    424 PHASE:   FETCH PC: 001F IR: 09C007F4 CMD:    SW
+  TICK:    425 PHASE: EXECUTE PC: 0020 IR: 52940001 CMD:  ADDI A: 00000000 B: 00000002 ALU: FFFFFFF4
+  TICK:    426 PHASE:   FETCH PC: 0020 IR: 52940001 CMD:  ADDI
+  TICK:    427 PHASE: EXECUTE PC: 0021 IR: A000001A CMD:     J
+  TICK:    428 PHASE:   FETCH PC: 001A IR: A000001A CMD:     J
+  TICK:    429 PHASE: EXECUTE PC: 001B IR: 94149806 CMD:   BGE A: 00000002 B: 00000002
+  TICK:    430 PHASE:   FETCH PC: 001B IR: 94149806 CMD:   BGE
+  TICK:    431 PHASE: EXECUTE PC: 001C IR: 51920001 CMD:  ADDI A: 00000003 B: 00000007 ALU: 00000003
+  TICK:    432 PHASE:   FETCH PC: 001C IR: 51920001 CMD:  ADDI
+  TICK:    433 PHASE: EXECUTE PC: 001D IR: 19ACA000 CMD:   ADD A: 000000DC B: 00000007 ALU: 000000DD
+  TICK:    434 PHASE:   FETCH PC: 001D IR: 19ACA000 CMD:   ADD
+  TICK:    435 PHASE: EXECUTE PC: 001E IR: 05CD0000 CMD:    LW A: 000000DD B: 00000003
+  TICK:    436 PHASE:   FETCH PC: 001E IR: 05CD0000 CMD:    LW
+  TICK:    437 PHASE: EXECUTE PC: 001F IR: 09C007F4 CMD:    SW A: 000000E0 B: 00000003
+  TICK:    438 PHASE:   FETCH PC: 001F IR: 09C007F4 CMD:    SW
+  TICK:    439 PHASE: EXECUTE PC: 0020 IR: 52940001 CMD:  ADDI A: 00000000 B: 00000003 ALU: FFFFFFF4
+  TICK:    440 PHASE:   FETCH PC: 0020 IR: 52940001 CMD:  ADDI
+  TICK:    441 PHASE: EXECUTE PC: 0021 IR: A000001A CMD:     J
+  TICK:    442 PHASE:   FETCH PC: 001A IR: A000001A CMD:     J
+  TICK:    443 PHASE: EXECUTE PC: 001B IR: 94149806 CMD:   BGE A: 00000003 B: 00000003
+  TICK:    444 PHASE:   FETCH PC: 001B IR: 94149806 CMD:   BGE
+  TICK:    445 PHASE: EXECUTE PC: 001C IR: 51920001 CMD:  ADDI A: 00000004 B: 00000007 ALU: 00000004
+  TICK:    446 PHASE:   FETCH PC: 001C IR: 51920001 CMD:  ADDI
+  TICK:    447 PHASE: EXECUTE PC: 001D IR: 19ACA000 CMD:   ADD A: 000000DC B: 00000007 ALU: 000000DD
+  TICK:    448 PHASE:   FETCH PC: 001D IR: 19ACA000 CMD:   ADD
+  TICK:    449 PHASE: EXECUTE PC: 001E IR: 05CD0000 CMD:    LW A: 000000DD B: 00000004
+  TICK:    450 PHASE:   FETCH PC: 001E IR: 05CD0000 CMD:    LW
+  TICK:    451 PHASE: EXECUTE PC: 001F IR: 09C007F4 CMD:    SW A: 000000E1 B: 00000004
+  TICK:    452 PHASE:   FETCH PC: 001F IR: 09C007F4 CMD:    SW
+  TICK:    453 PHASE: EXECUTE PC: 0020 IR: 52940001 CMD:  ADDI A: 00000000 B: 00000004 ALU: FFFFFFF4
+  TICK:    454 PHASE:   FETCH PC: 0020 IR: 52940001 CMD:  ADDI
+  TICK:    455 PHASE: EXECUTE PC: 0021 IR: A000001A CMD:     J
+  TICK:    456 PHASE:   FETCH PC: 001A IR: A000001A CMD:     J
+  TICK:    457 PHASE: EXECUTE PC: 001B IR: 94149806 CMD:   BGE A: 00000004 B: 00000004
+  TICK:    458 PHASE:   FETCH PC: 001B IR: 94149806 CMD:   BGE
+  TICK:    459 PHASE: EXECUTE PC: 001C IR: 51920001 CMD:  ADDI A: 00000005 B: 00000007 ALU: 00000005
+  TICK:    460 PHASE:   FETCH PC: 001C IR: 51920001 CMD:  ADDI
+  TICK:    461 PHASE: EXECUTE PC: 001D IR: 19ACA000 CMD:   ADD A: 000000DC B: 00000007 ALU: 000000DD
+  TICK:    462 PHASE:   FETCH PC: 001D IR: 19ACA000 CMD:   ADD
+  TICK:    463 PHASE: EXECUTE PC: 001E IR: 05CD0000 CMD:    LW A: 000000DD B: 00000005
+  TICK:    464 PHASE:   FETCH PC: 001E IR: 05CD0000 CMD:    LW
+  TICK:    465 PHASE: EXECUTE PC: 001F IR: 09C007F4 CMD:    SW A: 000000E2 B: 00000005
+  TICK:    466 PHASE:   FETCH PC: 001F IR: 09C007F4 CMD:    SW
+  TICK:    467 PHASE: EXECUTE PC: 0020 IR: 52940001 CMD:  ADDI A: 00000000 B: 00000005 ALU: FFFFFFF4
+  TICK:    468 PHASE:   FETCH PC: 0020 IR: 52940001 CMD:  ADDI
+  TICK:    469 PHASE: EXECUTE PC: 0021 IR: A000001A CMD:     J
+  TICK:    470 PHASE:   FETCH PC: 001A IR: A000001A CMD:     J
+  TICK:    471 PHASE: EXECUTE PC: 001B IR: 94149806 CMD:   BGE A: 00000005 B: 00000005
+  TICK:    472 PHASE:   FETCH PC: 001B IR: 94149806 CMD:   BGE
+  TICK:    473 PHASE: EXECUTE PC: 001C IR: 51920001 CMD:  ADDI A: 00000006 B: 00000007 ALU: 00000006
+  TICK:    474 PHASE:   FETCH PC: 001C IR: 51920001 CMD:  ADDI
+  TICK:    475 PHASE: EXECUTE PC: 001D IR: 19ACA000 CMD:   ADD A: 000000DC B: 00000007 ALU: 000000DD
+  TICK:    476 PHASE:   FETCH PC: 001D IR: 19ACA000 CMD:   ADD
+  TICK:    477 PHASE: EXECUTE PC: 001E IR: 05CD0000 CMD:    LW A: 000000DD B: 00000006
+  TICK:    478 PHASE:   FETCH PC: 001E IR: 05CD0000 CMD:    LW
+  TICK:    479 PHASE: EXECUTE PC: 001F IR: 09C007F4 CMD:    SW A: 000000E3 B: 00000006
+  TICK:    480 PHASE:   FETCH PC: 001F IR: 09C007F4 CMD:    SW
+  TICK:    481 PHASE: EXECUTE PC: 0020 IR: 52940001 CMD:  ADDI A: 00000000 B: 00000006 ALU: FFFFFFF4
+  TICK:    482 PHASE:   FETCH PC: 0020 IR: 52940001 CMD:  ADDI
+  TICK:    483 PHASE: EXECUTE PC: 0021 IR: A000001A CMD:     J
+  TICK:    484 PHASE:   FETCH PC: 001A IR: A000001A CMD:     J
+  TICK:    485 PHASE: EXECUTE PC: 001B IR: 94149806 CMD:   BGE A: 00000006 B: 00000006
+  TICK:    486 PHASE:   FETCH PC: 0021 IR: 94149806 CMD:   BGE
+  TICK:    487 PHASE: EXECUTE PC: 0022 IR: 52800000 CMD:  ADDI A: 00000007 B: 00000007 ALU: 00000007
+  TICK:    488 PHASE:   FETCH PC: 0022 IR: 52800000 CMD:  ADDI
+  TICK:    489 PHASE: EXECUTE PC: 0023 IR: 9414B006 CMD:   BGE A: 00000000 B: 00000007
+  TICK:    490 PHASE:   FETCH PC: 0023 IR: 9414B006 CMD:   BGE
+  TICK:    491 PHASE: EXECUTE PC: 0024 IR: 51950001 CMD:  ADDI A: 00000000 B: 00000005 ALU: 00000000
+  TICK:    492 PHASE:   FETCH PC: 0024 IR: 51950001 CMD:  ADDI
+  TICK:    493 PHASE: EXECUTE PC: 0025 IR: 19ACA000 CMD:   ADD A: 000000F0 B: 00000005 ALU: 000000F1
+  TICK:    494 PHASE:   FETCH PC: 0025 IR: 19ACA000 CMD:   ADD
+  TICK:    495 PHASE: EXECUTE PC: 0026 IR: 05CD0000 CMD:    LW A: 000000F1 B: 00000000
+  TICK:    496 PHASE:   FETCH PC: 0026 IR: 05CD0000 CMD:    LW
+  TICK:    497 PHASE: EXECUTE PC: 0027 IR: 09C007F4 CMD:    SW A: 000000F1 B: 00000000
+  TICK:    498 PHASE:   FETCH PC: 0027 IR: 09C007F4 CMD:    SW
+  TICK:    499 PHASE: EXECUTE PC: 0028 IR: 52940001 CMD:  ADDI A: 00000000 B: 00000000 ALU: FFFFFFF4
+  TICK:    500 PHASE:   FETCH PC: 0028 IR: 52940001 CMD:  ADDI
+  TICK:    501 PHASE: EXECUTE PC: 0029 IR: A0000022 CMD:     J
+  TICK:    502 PHASE:   FETCH PC: 0022 IR: A0000022 CMD:     J
+  TICK:    503 PHASE: EXECUTE PC: 0023 IR: 9414B006 CMD:   BGE A: 00000000 B: 00000000
+  TICK:    504 PHASE:   FETCH PC: 0023 IR: 9414B006 CMD:   BGE
+  TICK:    505 PHASE: EXECUTE PC: 0024 IR: 51950001 CMD:  ADDI A: 00000001 B: 00000005 ALU: 00000001
+  TICK:    506 PHASE:   FETCH PC: 0024 IR: 51950001 CMD:  ADDI
+  TICK:    507 PHASE: EXECUTE PC: 0025 IR: 19ACA000 CMD:   ADD A: 000000F0 B: 00000005 ALU: 000000F1
+  TICK:    508 PHASE:   FETCH PC: 0025 IR: 19ACA000 CMD:   ADD
+  TICK:    509 PHASE: EXECUTE PC: 0026 IR: 05CD0000 CMD:    LW A: 000000F1 B: 00000001
+  TICK:    510 PHASE:   FETCH PC: 0026 IR: 05CD0000 CMD:    LW
+  TICK:    511 PHASE: EXECUTE PC: 0027 IR: 09C007F4 CMD:    SW A: 000000F2 B: 00000001
+  TICK:    512 PHASE:   FETCH PC: 0027 IR: 09C007F4 CMD:    SW
+  TICK:    513 PHASE: EXECUTE PC: 0028 IR: 52940001 CMD:  ADDI A: 00000000 B: 00000001 ALU: FFFFFFF4
+  TICK:    514 PHASE:   FETCH PC: 0028 IR: 52940001 CMD:  ADDI
+  TICK:    515 PHASE: EXECUTE PC: 0029 IR: A0000022 CMD:     J
+  TICK:    516 PHASE:   FETCH PC: 0022 IR: A0000022 CMD:     J
+  TICK:    517 PHASE: EXECUTE PC: 0023 IR: 9414B006 CMD:   BGE A: 00000001 B: 00000001
+  TICK:    518 PHASE:   FETCH PC: 0023 IR: 9414B006 CMD:   BGE
+  TICK:    519 PHASE: EXECUTE PC: 0024 IR: 51950001 CMD:  ADDI A: 00000002 B: 00000005 ALU: 00000002
+  TICK:    520 PHASE:   FETCH PC: 0024 IR: 51950001 CMD:  ADDI
+  TICK:    521 PHASE: EXECUTE PC: 0025 IR: 19ACA000 CMD:   ADD A: 000000F0 B: 00000005 ALU: 000000F1
+  TICK:    522 PHASE:   FETCH PC: 0025 IR: 19ACA000 CMD:   ADD
+  TICK:    523 PHASE: EXECUTE PC: 0026 IR: 05CD0000 CMD:    LW A: 000000F1 B: 00000002
+  TICK:    524 PHASE:   FETCH PC: 0026 IR: 05CD0000 CMD:    LW
+  TICK:    525 PHASE: EXECUTE PC: 0027 IR: 09C007F4 CMD:    SW A: 000000F3 B: 00000002
+  TICK:    526 PHASE:   FETCH PC: 0027 IR: 09C007F4 CMD:    SW
+  TICK:    527 PHASE: EXECUTE PC: 0028 IR: 52940001 CMD:  ADDI A: 00000000 B: 00000002 ALU: FFFFFFF4
+  TICK:    528 PHASE:   FETCH PC: 0028 IR: 52940001 CMD:  ADDI
+  TICK:    529 PHASE: EXECUTE PC: 0029 IR: A0000022 CMD:     J
+  TICK:    530 PHASE:   FETCH PC: 0022 IR: A0000022 CMD:     J
+  TICK:    531 PHASE: EXECUTE PC: 0023 IR: 9414B006 CMD:   BGE A: 00000002 B: 00000002
+  TICK:    532 PHASE:   FETCH PC: 0023 IR: 9414B006 CMD:   BGE
+  TICK:    533 PHASE: EXECUTE PC: 0024 IR: 51950001 CMD:  ADDI A: 00000003 B: 00000005 ALU: 00000003
+  TICK:    534 PHASE:   FETCH PC: 0024 IR: 51950001 CMD:  ADDI
+  TICK:    535 PHASE: EXECUTE PC: 0025 IR: 19ACA000 CMD:   ADD A: 000000F0 B: 00000005 ALU: 000000F1
+  TICK:    536 PHASE:   FETCH PC: 0025 IR: 19ACA000 CMD:   ADD
+  TICK:    537 PHASE: EXECUTE PC: 0026 IR: 05CD0000 CMD:    LW A: 000000F1 B: 00000003
+  TICK:    538 PHASE:   FETCH PC: 0026 IR: 05CD0000 CMD:    LW
+  TICK:    539 PHASE: EXECUTE PC: 0027 IR: 09C007F4 CMD:    SW A: 000000F4 B: 00000003
+  TICK:    540 PHASE:   FETCH PC: 0027 IR: 09C007F4 CMD:    SW
+  TICK:    541 PHASE: EXECUTE PC: 0028 IR: 52940001 CMD:  ADDI A: 00000000 B: 00000003 ALU: FFFFFFF4
+  TICK:    542 PHASE:   FETCH PC: 0028 IR: 52940001 CMD:  ADDI
+  TICK:    543 PHASE: EXECUTE PC: 0029 IR: A0000022 CMD:     J
+  TICK:    544 PHASE:   FETCH PC: 0022 IR: A0000022 CMD:     J
+  TICK:    545 PHASE: EXECUTE PC: 0023 IR: 9414B006 CMD:   BGE A: 00000003 B: 00000003
+  TICK:    546 PHASE:   FETCH PC: 0023 IR: 9414B006 CMD:   BGE
+  TICK:    547 PHASE: EXECUTE PC: 0024 IR: 51950001 CMD:  ADDI A: 00000004 B: 00000005 ALU: 00000004
+  TICK:    548 PHASE:   FETCH PC: 0024 IR: 51950001 CMD:  ADDI
+  TICK:    549 PHASE: EXECUTE PC: 0025 IR: 19ACA000 CMD:   ADD A: 000000F0 B: 00000005 ALU: 000000F1
+  TICK:    550 PHASE:   FETCH PC: 0025 IR: 19ACA000 CMD:   ADD
+  TICK:    551 PHASE: EXECUTE PC: 0026 IR: 05CD0000 CMD:    LW A: 000000F1 B: 00000004
+  TICK:    552 PHASE:   FETCH PC: 0026 IR: 05CD0000 CMD:    LW
+  TICK:    553 PHASE: EXECUTE PC: 0027 IR: 09C007F4 CMD:    SW A: 000000F5 B: 00000004
+  TICK:    554 PHASE:   FETCH PC: 0027 IR: 09C007F4 CMD:    SW
+  TICK:    555 PHASE: EXECUTE PC: 0028 IR: 52940001 CMD:  ADDI A: 00000000 B: 00000004 ALU: FFFFFFF4
+  TICK:    556 PHASE:   FETCH PC: 0028 IR: 52940001 CMD:  ADDI
+  TICK:    557 PHASE: EXECUTE PC: 0029 IR: A0000022 CMD:     J
+  TICK:    558 PHASE:   FETCH PC: 0022 IR: A0000022 CMD:     J
+  TICK:    559 PHASE: EXECUTE PC: 0023 IR: 9414B006 CMD:   BGE A: 00000004 B: 00000004
+  TICK:    560 PHASE:   FETCH PC: 0029 IR: 9414B006 CMD:   BGE
+  TICK:    561 PHASE: EXECUTE PC: 002A IR: 51800021 CMD:  ADDI A: 00000005 B: 00000005 ALU: 00000005
+  TICK:    562 PHASE:   FETCH PC: 002A IR: 51800021 CMD:  ADDI
+  TICK:    563 PHASE: EXECUTE PC: 002B IR: 098007F4 CMD:    SW A: 00000000 B: 00000005
+  TICK:    564 PHASE:   FETCH PC: 002B IR: 098007F4 CMD:    SW
+  TICK:    565 PHASE: EXECUTE PC: 002C IR: 5180000A CMD:  ADDI A: 00000000 B: 00000005 ALU: FFFFFFF4
+  TICK:    566 PHASE:   FETCH PC: 002C IR: 5180000A CMD:  ADDI
+  TICK:    567 PHASE: EXECUTE PC: 002D IR: 098007F4 CMD:    SW A: 00000000 B: 00000005
+  TICK:    568 PHASE:   FETCH PC: 002D IR: 098007F4 CMD:    SW
+  TICK:    569 PHASE: EXECUTE PC: 002E IR: FC000000 CMD:  HALT
+  TICK:    570 PHASE:    HALT PC: 002E IR: FC000000 CMD:  HALT
+  
+  Total ticks: 570

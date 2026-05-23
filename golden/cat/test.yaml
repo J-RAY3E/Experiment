@@ -1,254 +1,134 @@
-input: 'Hello, World!
-
-  '
 name: cat
-out_output: 'Hello, World!
-
-  '
-out_lst: '        .org 0
-
+source_file: golden\cat\source.asm
+input: |
+  Hello, World!
+out_output: |
+  Hello, World!
+out_lst: |
+          .org 0
   0000 - 058007F0 - LW t0 zero 0xFFF0
-
   0001 - 800C0002 - BEQ t0 zero done
-
   0002 - 098007F4 - SW t0 zero 0xFFF4
-
   0003 - A0000000 - J loop
-
-  0004 - FC000000 - HALT '
-source_file: golden/cat/source.asm
-out_journal: 'tick=     1 phase=Execute pc=0001 ir=058007F0    LW a=00000000 b=00000000
-
-  tick=     2 phase=  Fetch pc=0001 ir=058007F0    LW
-
-  tick=     3 phase=Execute pc=0002 ir=800C0002   BEQ a=00000000 b=00000000
-
-  tick=     4 phase=  Fetch pc=0002 ir=800C0002   BEQ
-
-  tick=     5 phase=Execute pc=0003 ir=098007F4    SW a=00000048 b=00000000
-
-  tick=     6 phase=  Fetch pc=0003 ir=098007F4    SW
-
-  tick=     7 phase=Execute pc=0004 ir=A0000000     J
-
-  tick=     8 phase=  Fetch pc=0000 ir=A0000000     J
-
-  tick=     9 phase=Execute pc=0001 ir=058007F0    LW a=00000000 b=00000000
-
-  tick=    10 phase=  Fetch pc=0001 ir=058007F0    LW
-
-  tick=    11 phase=Execute pc=0002 ir=800C0002   BEQ a=00000000 b=00000000
-
-  tick=    12 phase=  Fetch pc=0002 ir=800C0002   BEQ
-
-  tick=    13 phase=Execute pc=0003 ir=098007F4    SW a=00000065 b=00000000
-
-  tick=    14 phase=  Fetch pc=0003 ir=098007F4    SW
-
-  tick=    15 phase=Execute pc=0004 ir=A0000000     J
-
-  tick=    16 phase=  Fetch pc=0000 ir=A0000000     J
-
-  tick=    17 phase=Execute pc=0001 ir=058007F0    LW a=00000000 b=00000000
-
-  tick=    18 phase=  Fetch pc=0001 ir=058007F0    LW
-
-  tick=    19 phase=Execute pc=0002 ir=800C0002   BEQ a=00000000 b=00000000
-
-  tick=    20 phase=  Fetch pc=0002 ir=800C0002   BEQ
-
-  tick=    21 phase=Execute pc=0003 ir=098007F4    SW a=0000006C b=00000000
-
-  tick=    22 phase=  Fetch pc=0003 ir=098007F4    SW
-
-  tick=    23 phase=Execute pc=0004 ir=A0000000     J
-
-  tick=    24 phase=  Fetch pc=0000 ir=A0000000     J
-
-  tick=    25 phase=Execute pc=0001 ir=058007F0    LW a=00000000 b=00000000
-
-  tick=    26 phase=  Fetch pc=0001 ir=058007F0    LW
-
-  tick=    27 phase=Execute pc=0002 ir=800C0002   BEQ a=00000000 b=00000000
-
-  tick=    28 phase=  Fetch pc=0002 ir=800C0002   BEQ
-
-  tick=    29 phase=Execute pc=0003 ir=098007F4    SW a=0000006C b=00000000
-
-  tick=    30 phase=  Fetch pc=0003 ir=098007F4    SW
-
-  tick=    31 phase=Execute pc=0004 ir=A0000000     J
-
-  tick=    32 phase=  Fetch pc=0000 ir=A0000000     J
-
-  tick=    33 phase=Execute pc=0001 ir=058007F0    LW a=00000000 b=00000000
-
-  tick=    34 phase=  Fetch pc=0001 ir=058007F0    LW
-
-  tick=    35 phase=Execute pc=0002 ir=800C0002   BEQ a=00000000 b=00000000
-
-  tick=    36 phase=  Fetch pc=0002 ir=800C0002   BEQ
-
-  tick=    37 phase=Execute pc=0003 ir=098007F4    SW a=0000006F b=00000000
-
-  tick=    38 phase=  Fetch pc=0003 ir=098007F4    SW
-
-  tick=    39 phase=Execute pc=0004 ir=A0000000     J
-
-  tick=    40 phase=  Fetch pc=0000 ir=A0000000     J
-
-  tick=    41 phase=Execute pc=0001 ir=058007F0    LW a=00000000 b=00000000
-
-  tick=    42 phase=  Fetch pc=0001 ir=058007F0    LW
-
-  tick=    43 phase=Execute pc=0002 ir=800C0002   BEQ a=00000000 b=00000000
-
-  tick=    44 phase=  Fetch pc=0002 ir=800C0002   BEQ
-
-  tick=    45 phase=Execute pc=0003 ir=098007F4    SW a=0000002C b=00000000
-
-  tick=    46 phase=  Fetch pc=0003 ir=098007F4    SW
-
-  tick=    47 phase=Execute pc=0004 ir=A0000000     J
-
-  tick=    48 phase=  Fetch pc=0000 ir=A0000000     J
-
-  tick=    49 phase=Execute pc=0001 ir=058007F0    LW a=00000000 b=00000000
-
-  tick=    50 phase=  Fetch pc=0001 ir=058007F0    LW
-
-  tick=    51 phase=Execute pc=0002 ir=800C0002   BEQ a=00000000 b=00000000
-
-  tick=    52 phase=  Fetch pc=0002 ir=800C0002   BEQ
-
-  tick=    53 phase=Execute pc=0003 ir=098007F4    SW a=00000020 b=00000000
-
-  tick=    54 phase=  Fetch pc=0003 ir=098007F4    SW
-
-  tick=    55 phase=Execute pc=0004 ir=A0000000     J
-
-  tick=    56 phase=  Fetch pc=0000 ir=A0000000     J
-
-  tick=    57 phase=Execute pc=0001 ir=058007F0    LW a=00000000 b=00000000
-
-  tick=    58 phase=  Fetch pc=0001 ir=058007F0    LW
-
-  tick=    59 phase=Execute pc=0002 ir=800C0002   BEQ a=00000000 b=00000000
-
-  tick=    60 phase=  Fetch pc=0002 ir=800C0002   BEQ
-
-  tick=    61 phase=Execute pc=0003 ir=098007F4    SW a=00000057 b=00000000
-
-  tick=    62 phase=  Fetch pc=0003 ir=098007F4    SW
-
-  tick=    63 phase=Execute pc=0004 ir=A0000000     J
-
-  tick=    64 phase=  Fetch pc=0000 ir=A0000000     J
-
-  tick=    65 phase=Execute pc=0001 ir=058007F0    LW a=00000000 b=00000000
-
-  tick=    66 phase=  Fetch pc=0001 ir=058007F0    LW
-
-  tick=    67 phase=Execute pc=0002 ir=800C0002   BEQ a=00000000 b=00000000
-
-  tick=    68 phase=  Fetch pc=0002 ir=800C0002   BEQ
-
-  tick=    69 phase=Execute pc=0003 ir=098007F4    SW a=0000006F b=00000000
-
-  tick=    70 phase=  Fetch pc=0003 ir=098007F4    SW
-
-  tick=    71 phase=Execute pc=0004 ir=A0000000     J
-
-  tick=    72 phase=  Fetch pc=0000 ir=A0000000     J
-
-  tick=    73 phase=Execute pc=0001 ir=058007F0    LW a=00000000 b=00000000
-
-  tick=    74 phase=  Fetch pc=0001 ir=058007F0    LW
-
-  tick=    75 phase=Execute pc=0002 ir=800C0002   BEQ a=00000000 b=00000000
-
-  tick=    76 phase=  Fetch pc=0002 ir=800C0002   BEQ
-
-  tick=    77 phase=Execute pc=0003 ir=098007F4    SW a=00000072 b=00000000
-
-  tick=    78 phase=  Fetch pc=0003 ir=098007F4    SW
-
-  tick=    79 phase=Execute pc=0004 ir=A0000000     J
-
-  tick=    80 phase=  Fetch pc=0000 ir=A0000000     J
-
-  tick=    81 phase=Execute pc=0001 ir=058007F0    LW a=00000000 b=00000000
-
-  tick=    82 phase=  Fetch pc=0001 ir=058007F0    LW
-
-  tick=    83 phase=Execute pc=0002 ir=800C0002   BEQ a=00000000 b=00000000
-
-  tick=    84 phase=  Fetch pc=0002 ir=800C0002   BEQ
-
-  tick=    85 phase=Execute pc=0003 ir=098007F4    SW a=0000006C b=00000000
-
-  tick=    86 phase=  Fetch pc=0003 ir=098007F4    SW
-
-  tick=    87 phase=Execute pc=0004 ir=A0000000     J
-
-  tick=    88 phase=  Fetch pc=0000 ir=A0000000     J
-
-  tick=    89 phase=Execute pc=0001 ir=058007F0    LW a=00000000 b=00000000
-
-  tick=    90 phase=  Fetch pc=0001 ir=058007F0    LW
-
-  tick=    91 phase=Execute pc=0002 ir=800C0002   BEQ a=00000000 b=00000000
-
-  tick=    92 phase=  Fetch pc=0002 ir=800C0002   BEQ
-
-  tick=    93 phase=Execute pc=0003 ir=098007F4    SW a=00000064 b=00000000
-
-  tick=    94 phase=  Fetch pc=0003 ir=098007F4    SW
-
-  tick=    95 phase=Execute pc=0004 ir=A0000000     J
-
-  tick=    96 phase=  Fetch pc=0000 ir=A0000000     J
-
-  tick=    97 phase=Execute pc=0001 ir=058007F0    LW a=00000000 b=00000000
-
-  tick=    98 phase=  Fetch pc=0001 ir=058007F0    LW
-
-  tick=    99 phase=Execute pc=0002 ir=800C0002   BEQ a=00000000 b=00000000
-
-  tick=   100 phase=  Fetch pc=0002 ir=800C0002   BEQ
-
-  tick=   101 phase=Execute pc=0003 ir=098007F4    SW a=00000021 b=00000000
-
-  tick=   102 phase=  Fetch pc=0003 ir=098007F4    SW
-
-  tick=   103 phase=Execute pc=0004 ir=A0000000     J
-
-  tick=   104 phase=  Fetch pc=0000 ir=A0000000     J
-
-  tick=   105 phase=Execute pc=0001 ir=058007F0    LW a=00000000 b=00000000
-
-  tick=   106 phase=  Fetch pc=0001 ir=058007F0    LW
-
-  tick=   107 phase=Execute pc=0002 ir=800C0002   BEQ a=00000000 b=00000000
-
-  tick=   108 phase=  Fetch pc=0002 ir=800C0002   BEQ
-
-  tick=   109 phase=Execute pc=0003 ir=098007F4    SW a=0000000A b=00000000
-
-  tick=   110 phase=  Fetch pc=0003 ir=098007F4    SW
-
-  tick=   111 phase=Execute pc=0004 ir=A0000000     J
-
-  tick=   112 phase=  Fetch pc=0000 ir=A0000000     J
-
-  tick=   113 phase=Execute pc=0001 ir=058007F0    LW a=00000000 b=00000000
-
-  tick=   114 phase=  Fetch pc=0001 ir=058007F0    LW
-
-  tick=   115 phase=Execute pc=0002 ir=800C0002   BEQ a=00000000 b=00000000
-
-  tick=   116 phase=  Fetch pc=0004 ir=800C0002   BEQ
-
-  tick=   117 phase=Execute pc=0005 ir=FC000000  HALT
-
-  tick=   118 phase=   Halt pc=0005 ir=FC000000  HALT'
+  0004 - FC000000 - HALT 
+out_journal: |
+  TICK:      1 PHASE: EXECUTE PC: 0001 IR: 058007F0 CMD:    LW A: 00000000 B: 00000000
+  TICK:      2 PHASE:   FETCH PC: 0001 IR: 058007F0 CMD:    LW
+  TICK:      3 PHASE: EXECUTE PC: 0002 IR: 800C0002 CMD:   BEQ A: 00000000 B: 00000000
+  TICK:      4 PHASE:   FETCH PC: 0002 IR: 800C0002 CMD:   BEQ
+  TICK:      5 PHASE: EXECUTE PC: 0003 IR: 098007F4 CMD:    SW A: 00000048 B: 00000000
+  TICK:      6 PHASE:   FETCH PC: 0003 IR: 098007F4 CMD:    SW
+  TICK:      7 PHASE: EXECUTE PC: 0004 IR: A0000000 CMD:     J
+  TICK:      8 PHASE:   FETCH PC: 0000 IR: A0000000 CMD:     J
+  TICK:      9 PHASE: EXECUTE PC: 0001 IR: 058007F0 CMD:    LW A: 00000000 B: 00000000
+  TICK:     10 PHASE:   FETCH PC: 0001 IR: 058007F0 CMD:    LW
+  TICK:     11 PHASE: EXECUTE PC: 0002 IR: 800C0002 CMD:   BEQ A: 00000000 B: 00000000
+  TICK:     12 PHASE:   FETCH PC: 0002 IR: 800C0002 CMD:   BEQ
+  TICK:     13 PHASE: EXECUTE PC: 0003 IR: 098007F4 CMD:    SW A: 00000065 B: 00000000
+  TICK:     14 PHASE:   FETCH PC: 0003 IR: 098007F4 CMD:    SW
+  TICK:     15 PHASE: EXECUTE PC: 0004 IR: A0000000 CMD:     J
+  TICK:     16 PHASE:   FETCH PC: 0000 IR: A0000000 CMD:     J
+  TICK:     17 PHASE: EXECUTE PC: 0001 IR: 058007F0 CMD:    LW A: 00000000 B: 00000000
+  TICK:     18 PHASE:   FETCH PC: 0001 IR: 058007F0 CMD:    LW
+  TICK:     19 PHASE: EXECUTE PC: 0002 IR: 800C0002 CMD:   BEQ A: 00000000 B: 00000000
+  TICK:     20 PHASE:   FETCH PC: 0002 IR: 800C0002 CMD:   BEQ
+  TICK:     21 PHASE: EXECUTE PC: 0003 IR: 098007F4 CMD:    SW A: 0000006C B: 00000000
+  TICK:     22 PHASE:   FETCH PC: 0003 IR: 098007F4 CMD:    SW
+  TICK:     23 PHASE: EXECUTE PC: 0004 IR: A0000000 CMD:     J
+  TICK:     24 PHASE:   FETCH PC: 0000 IR: A0000000 CMD:     J
+  TICK:     25 PHASE: EXECUTE PC: 0001 IR: 058007F0 CMD:    LW A: 00000000 B: 00000000
+  TICK:     26 PHASE:   FETCH PC: 0001 IR: 058007F0 CMD:    LW
+  TICK:     27 PHASE: EXECUTE PC: 0002 IR: 800C0002 CMD:   BEQ A: 00000000 B: 00000000
+  TICK:     28 PHASE:   FETCH PC: 0002 IR: 800C0002 CMD:   BEQ
+  TICK:     29 PHASE: EXECUTE PC: 0003 IR: 098007F4 CMD:    SW A: 0000006C B: 00000000
+  TICK:     30 PHASE:   FETCH PC: 0003 IR: 098007F4 CMD:    SW
+  TICK:     31 PHASE: EXECUTE PC: 0004 IR: A0000000 CMD:     J
+  TICK:     32 PHASE:   FETCH PC: 0000 IR: A0000000 CMD:     J
+  TICK:     33 PHASE: EXECUTE PC: 0001 IR: 058007F0 CMD:    LW A: 00000000 B: 00000000
+  TICK:     34 PHASE:   FETCH PC: 0001 IR: 058007F0 CMD:    LW
+  TICK:     35 PHASE: EXECUTE PC: 0002 IR: 800C0002 CMD:   BEQ A: 00000000 B: 00000000
+  TICK:     36 PHASE:   FETCH PC: 0002 IR: 800C0002 CMD:   BEQ
+  TICK:     37 PHASE: EXECUTE PC: 0003 IR: 098007F4 CMD:    SW A: 0000006F B: 00000000
+  TICK:     38 PHASE:   FETCH PC: 0003 IR: 098007F4 CMD:    SW
+  TICK:     39 PHASE: EXECUTE PC: 0004 IR: A0000000 CMD:     J
+  TICK:     40 PHASE:   FETCH PC: 0000 IR: A0000000 CMD:     J
+  TICK:     41 PHASE: EXECUTE PC: 0001 IR: 058007F0 CMD:    LW A: 00000000 B: 00000000
+  TICK:     42 PHASE:   FETCH PC: 0001 IR: 058007F0 CMD:    LW
+  TICK:     43 PHASE: EXECUTE PC: 0002 IR: 800C0002 CMD:   BEQ A: 00000000 B: 00000000
+  TICK:     44 PHASE:   FETCH PC: 0002 IR: 800C0002 CMD:   BEQ
+  TICK:     45 PHASE: EXECUTE PC: 0003 IR: 098007F4 CMD:    SW A: 0000002C B: 00000000
+  TICK:     46 PHASE:   FETCH PC: 0003 IR: 098007F4 CMD:    SW
+  TICK:     47 PHASE: EXECUTE PC: 0004 IR: A0000000 CMD:     J
+  TICK:     48 PHASE:   FETCH PC: 0000 IR: A0000000 CMD:     J
+  TICK:     49 PHASE: EXECUTE PC: 0001 IR: 058007F0 CMD:    LW A: 00000000 B: 00000000
+  TICK:     50 PHASE:   FETCH PC: 0001 IR: 058007F0 CMD:    LW
+  TICK:     51 PHASE: EXECUTE PC: 0002 IR: 800C0002 CMD:   BEQ A: 00000000 B: 00000000
+  TICK:     52 PHASE:   FETCH PC: 0002 IR: 800C0002 CMD:   BEQ
+  TICK:     53 PHASE: EXECUTE PC: 0003 IR: 098007F4 CMD:    SW A: 00000020 B: 00000000
+  TICK:     54 PHASE:   FETCH PC: 0003 IR: 098007F4 CMD:    SW
+  TICK:     55 PHASE: EXECUTE PC: 0004 IR: A0000000 CMD:     J
+  TICK:     56 PHASE:   FETCH PC: 0000 IR: A0000000 CMD:     J
+  TICK:     57 PHASE: EXECUTE PC: 0001 IR: 058007F0 CMD:    LW A: 00000000 B: 00000000
+  TICK:     58 PHASE:   FETCH PC: 0001 IR: 058007F0 CMD:    LW
+  TICK:     59 PHASE: EXECUTE PC: 0002 IR: 800C0002 CMD:   BEQ A: 00000000 B: 00000000
+  TICK:     60 PHASE:   FETCH PC: 0002 IR: 800C0002 CMD:   BEQ
+  TICK:     61 PHASE: EXECUTE PC: 0003 IR: 098007F4 CMD:    SW A: 00000057 B: 00000000
+  TICK:     62 PHASE:   FETCH PC: 0003 IR: 098007F4 CMD:    SW
+  TICK:     63 PHASE: EXECUTE PC: 0004 IR: A0000000 CMD:     J
+  TICK:     64 PHASE:   FETCH PC: 0000 IR: A0000000 CMD:     J
+  TICK:     65 PHASE: EXECUTE PC: 0001 IR: 058007F0 CMD:    LW A: 00000000 B: 00000000
+  TICK:     66 PHASE:   FETCH PC: 0001 IR: 058007F0 CMD:    LW
+  TICK:     67 PHASE: EXECUTE PC: 0002 IR: 800C0002 CMD:   BEQ A: 00000000 B: 00000000
+  TICK:     68 PHASE:   FETCH PC: 0002 IR: 800C0002 CMD:   BEQ
+  TICK:     69 PHASE: EXECUTE PC: 0003 IR: 098007F4 CMD:    SW A: 0000006F B: 00000000
+  TICK:     70 PHASE:   FETCH PC: 0003 IR: 098007F4 CMD:    SW
+  TICK:     71 PHASE: EXECUTE PC: 0004 IR: A0000000 CMD:     J
+  TICK:     72 PHASE:   FETCH PC: 0000 IR: A0000000 CMD:     J
+  TICK:     73 PHASE: EXECUTE PC: 0001 IR: 058007F0 CMD:    LW A: 00000000 B: 00000000
+  TICK:     74 PHASE:   FETCH PC: 0001 IR: 058007F0 CMD:    LW
+  TICK:     75 PHASE: EXECUTE PC: 0002 IR: 800C0002 CMD:   BEQ A: 00000000 B: 00000000
+  TICK:     76 PHASE:   FETCH PC: 0002 IR: 800C0002 CMD:   BEQ
+  TICK:     77 PHASE: EXECUTE PC: 0003 IR: 098007F4 CMD:    SW A: 00000072 B: 00000000
+  TICK:     78 PHASE:   FETCH PC: 0003 IR: 098007F4 CMD:    SW
+  TICK:     79 PHASE: EXECUTE PC: 0004 IR: A0000000 CMD:     J
+  TICK:     80 PHASE:   FETCH PC: 0000 IR: A0000000 CMD:     J
+  TICK:     81 PHASE: EXECUTE PC: 0001 IR: 058007F0 CMD:    LW A: 00000000 B: 00000000
+  TICK:     82 PHASE:   FETCH PC: 0001 IR: 058007F0 CMD:    LW
+  TICK:     83 PHASE: EXECUTE PC: 0002 IR: 800C0002 CMD:   BEQ A: 00000000 B: 00000000
+  TICK:     84 PHASE:   FETCH PC: 0002 IR: 800C0002 CMD:   BEQ
+  TICK:     85 PHASE: EXECUTE PC: 0003 IR: 098007F4 CMD:    SW A: 0000006C B: 00000000
+  TICK:     86 PHASE:   FETCH PC: 0003 IR: 098007F4 CMD:    SW
+  TICK:     87 PHASE: EXECUTE PC: 0004 IR: A0000000 CMD:     J
+  TICK:     88 PHASE:   FETCH PC: 0000 IR: A0000000 CMD:     J
+  TICK:     89 PHASE: EXECUTE PC: 0001 IR: 058007F0 CMD:    LW A: 00000000 B: 00000000
+  TICK:     90 PHASE:   FETCH PC: 0001 IR: 058007F0 CMD:    LW
+  TICK:     91 PHASE: EXECUTE PC: 0002 IR: 800C0002 CMD:   BEQ A: 00000000 B: 00000000
+  TICK:     92 PHASE:   FETCH PC: 0002 IR: 800C0002 CMD:   BEQ
+  TICK:     93 PHASE: EXECUTE PC: 0003 IR: 098007F4 CMD:    SW A: 00000064 B: 00000000
+  TICK:     94 PHASE:   FETCH PC: 0003 IR: 098007F4 CMD:    SW
+  TICK:     95 PHASE: EXECUTE PC: 0004 IR: A0000000 CMD:     J
+  TICK:     96 PHASE:   FETCH PC: 0000 IR: A0000000 CMD:     J
+  TICK:     97 PHASE: EXECUTE PC: 0001 IR: 058007F0 CMD:    LW A: 00000000 B: 00000000
+  TICK:     98 PHASE:   FETCH PC: 0001 IR: 058007F0 CMD:    LW
+  TICK:     99 PHASE: EXECUTE PC: 0002 IR: 800C0002 CMD:   BEQ A: 00000000 B: 00000000
+  TICK:    100 PHASE:   FETCH PC: 0002 IR: 800C0002 CMD:   BEQ
+  TICK:    101 PHASE: EXECUTE PC: 0003 IR: 098007F4 CMD:    SW A: 00000021 B: 00000000
+  TICK:    102 PHASE:   FETCH PC: 0003 IR: 098007F4 CMD:    SW
+  TICK:    103 PHASE: EXECUTE PC: 0004 IR: A0000000 CMD:     J
+  TICK:    104 PHASE:   FETCH PC: 0000 IR: A0000000 CMD:     J
+  TICK:    105 PHASE: EXECUTE PC: 0001 IR: 058007F0 CMD:    LW A: 00000000 B: 00000000
+  TICK:    106 PHASE:   FETCH PC: 0001 IR: 058007F0 CMD:    LW
+  TICK:    107 PHASE: EXECUTE PC: 0002 IR: 800C0002 CMD:   BEQ A: 00000000 B: 00000000
+  TICK:    108 PHASE:   FETCH PC: 0002 IR: 800C0002 CMD:   BEQ
+  TICK:    109 PHASE: EXECUTE PC: 0003 IR: 098007F4 CMD:    SW A: 0000000A B: 00000000
+  TICK:    110 PHASE:   FETCH PC: 0003 IR: 098007F4 CMD:    SW
+  TICK:    111 PHASE: EXECUTE PC: 0004 IR: A0000000 CMD:     J
+  TICK:    112 PHASE:   FETCH PC: 0000 IR: A0000000 CMD:     J
+  TICK:    113 PHASE: EXECUTE PC: 0001 IR: 058007F0 CMD:    LW A: 00000000 B: 00000000
+  TICK:    114 PHASE:   FETCH PC: 0001 IR: 058007F0 CMD:    LW
+  TICK:    115 PHASE: EXECUTE PC: 0002 IR: 800C0002 CMD:   BEQ A: 00000000 B: 00000000
+  TICK:    116 PHASE:   FETCH PC: 0004 IR: 800C0002 CMD:   BEQ
+  TICK:    117 PHASE: EXECUTE PC: 0005 IR: FC000000 CMD:  HALT
+  TICK:    118 PHASE:    HALT PC: 0005 IR: FC000000 CMD:  HALT
+  
+  Total ticks: 118

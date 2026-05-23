@@ -1,0 +1,41 @@
+// Euler Problem 4: Brute Force O(N^2)
+function main() {
+    let max = 0;
+    let a = 999;
+    let b = 0;
+    let p = 0;
+    let n = 0;
+    let rev = 0;
+    let d = 0;
+
+    while (a >= 100) {
+        b = a;
+        while (b >= 100) {
+            p = a * b;
+            if (p > max) {
+                // Inline palindrome check
+                n = p;
+                rev = 0;
+                while (n > 0) {
+                    rev = rev * 10 + (n % 10);
+                    n = n / 10;
+                }
+                if (rev == p) {
+                    max = p;
+                }
+            }
+            b = b - 1;
+        }
+        a = a - 1;
+    }
+    
+    // Print 6 digits (906609)
+    print((max / 100000) % 10 + 48);
+    print((max / 10000) % 10 + 48);
+    print((max / 1000) % 10 + 48);
+    print((max / 100) % 10 + 48);
+    print((max / 10) % 10 + 48);
+    print(max % 10 + 48);
+    print(10);
+    halt;
+}

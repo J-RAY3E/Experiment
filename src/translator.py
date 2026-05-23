@@ -10,12 +10,13 @@ Usage:
     python -m src.translator hl  <input.txt> <output.bin>
 """
 
-import sys
 import os
+import sys
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from src.assembler import write_binary
 from src.hl import HL
+
 
 def main():
     if len(sys.argv) < 4:
@@ -32,7 +33,8 @@ def main():
         with open(src_path, encoding="utf-8") as f:
             src = HL().run(f.read())
     else:
-        print(f"Unknown mode: {mode}"); sys.exit(1)
+        print(f"Unknown mode: {mode}")
+        sys.exit(1)
     n = write_binary(src, bin_path, lst_path)
     print(f"OK: {n} instructions -> {os.path.basename(bin_path)}")
 

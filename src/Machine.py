@@ -7,16 +7,19 @@ Usage:
     python Machine.py <binary.bin> [input.txt]
 """
 
-import struct
 import os
 import re
+import struct
 import sys
 
-from src.ISA import (
-    REG, REG_NAMES,STACK_BASE, decode,
-)
-from src.DataPath import DataPath
 from src.ControlPath import ControlPath
+from src.DataPath import DataPath
+from src.ISA import (
+    REG,
+    REG_NAMES,
+    STACK_BASE,
+    decode,
+)
 
 
 def load_binary(bin_path, lst_path=None):
@@ -91,6 +94,12 @@ class Machine:
 
 
     def tick(self):
+        """Advance the processor by one clock cycle.
+
+        Follows the Ibex 2-stage model:
+          IF    — ControlPath is in Phase.Fetch   → ir_we=True, fetch inst_word
+          DI_EX — ControlPath is in Phase.DI_EX  → decode + execute
+        """
         if self.halted:
             return
         self.tick_count += 1
@@ -100,15 +109,16 @@ class Machine:
         next_phase = self.cp.next_phase(ir, {})
         sigs = self.cp.control_signals(ir)
 
+        # IF stage: supply the instruction word from instruction memory
         inst_word = None
         if sigs.get("ir_we"):
             pc = d.pc
             inst_word = self.instr_mem[pc] if pc < len(self.instr_mem) else 0
 
-        # Apply signals to datapath
+        # Clock the datapath (IF or DI_EX depending on ir_we)
         halted = d.tick(sigs, inst_word)
 
-        # Advance state register
+        # Advance the control-path state register (Fetch ↔ DI_EX)
         self.cp.state_reg.clock(next_state=next_phase)
 
         if halted:
@@ -132,28 +142,35 @@ class Machine:
 
 
     def get_journal(self):
+        """Return a human-readable log of every clock cycle.
+
+        Phase labels follow the Ibex 2-stage model:
+          Fetch  — IF  stage (instruction fetched, PC incremented)
+          DI_EX  — ID/EX stage (decode + execute + writeback + PC update)
+        """
         lines = []
         for s in self.cycle_snapshots:
             ir = s["ir"]
             dcd = decode(ir)
             name = dcd["name"]
-            phase = s["phase"]
+            phase = s["phase"].upper()
             pc = s["pc"]
             tick = s["tick"]
 
             line = (
-                f"tick={tick:>6} phase={phase:>7} "
-                f"pc={pc:04X} ir={ir:08X} {name:>5}"
+                f"TICK: {tick:>6} PHASE: {phase:>7} "
+                f"PC: {pc:04X} IR: {ir:08X} CMD: {name:>5}"
             )
 
-            if phase == "Execute" and name not in ("NOP", "HALT", "J"):
-                line += f" a={s['a']:08X} b={s['b']:08X}"
-            if phase == "Execute" and name in (
+            # Show operand registers for non-trivial instructions
+            if phase == "EXECUTE" and name not in ("NOP", "HALT", "J"):
+                line += f" A: {s['a']:08X} B: {s['b']:08X}"
+            if phase == "EXECUTE" and name in (
                 "ADD", "SUB", "MUL", "ADDI", "ANDI", "ORI", "XORI", "LUI",
                 "SLLI", "SRLI", "SRAI", "SLTI", "DIV", "REM", "MULH",
                 "AND", "OR", "XOR", "NOT", "SLL", "SRL", "SRA", "SLT",
             ):
-                line += f" alu={s['alu_out']:08X}"
+                line += f" ALU: {s['alu_out']:08X}"
 
             lines.append(line)
         return "\n".join(lines)
@@ -165,7 +182,7 @@ class Machine:
 
 def main():
     if len(sys.argv) < 2:
-        print("Usage: python Machine.py <binary.bin> [input.txt]")
+        print("Usage: python Machine.py <binary.bin> [input.txt] [max_ticks]")
         sys.exit(1)
 
     bin_path = sys.argv[1]
@@ -179,12 +196,14 @@ def main():
     if len(sys.argv) > 2:
         with open(sys.argv[2], encoding="utf-8") as f:
             input_text = f.read()
+            
+    max_ticks = int(sys.argv[3]) if len(sys.argv) > 3 else 100_000
 
     m = Machine(bin_path, lst_path, input_text)
-    out = m.run()
+    out = m.run(max_ticks=max_ticks)
     print("Output:")
     print(repr(out))
-    print(f"\nJournal (last 30):")
+    print("\nJournal (last 30):")
     lines = m.get_journal().split("\n")
     for line in lines[-30:]:
         print(line)

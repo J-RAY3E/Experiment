@@ -1,5 +1,5 @@
 from enum import Enum, auto
-from typing import Optional, Callable, Dict, Any
+from typing import Any, Callable, Dict, Optional
 
 from src.ISA import OPCODE_NAMES
 
@@ -58,7 +58,10 @@ FORMAT_U = "U_FORMAT"
 FORMAT_V = "V_FORMAT"
 FORMAT_VL = "VL_FORMAT"
 
-R_FORMAT = {"ADD", "SUB", "MUL", "DIV", "REM", "MULH", "AND", "OR", "XOR", "NOT", "SLL", "SRL", "SRA", "SLT", "NOP"}
+R_FORMAT = {
+    "ADD", "SUB", "MUL", "DIV", "REM", "MULH", "AND",
+    "OR", "XOR", "NOT", "SLL", "SRL", "SRA", "SLT", "NOP"
+}
 I_FORMAT = {"ADDI", "ANDI", "ORI", "XORI", "SLLI", "SRLI", "SRAI", "SLTI"}
 L_FORMAT = {"LW", "LB"}
 S_FORMAT = {"SW", "SB"}
@@ -129,14 +132,14 @@ DEFAULT_SIGNALS: Dict[str, Any] = {
 }
 
 class Phase(Enum):
-    Fetch = auto()
-    Execute = auto()
-    VecOp = auto()
-    Halt = auto()
+    FETCH = auto()    # IF  — Instruction Fetch stage
+    EXECUTE = auto()  # ID/EX — Decode + Execute stage (Ibex 2-stage model)
+    VecOp = auto()   # Multi-cycle vector operation (extends DI_EX for SIMD)
+    HALT = auto()
 
 class InstructionFormat(Enum):
     R = auto()
-    I = auto()
+    I_FMT = auto()
     L = auto()
     S = auto()
     B = auto()
@@ -151,25 +154,30 @@ class InstructionFormat(Enum):
     def from_opcode_name(cls, name: str) -> Optional["InstructionFormat"]:
         for fmt_name, opcode_set in OPCODE_FORMATS.items():
             if name in opcode_set:
-                return cls[fmt_name.split("_")[0]]
+                # Need to map I_FORMAT to I_FMT in the Enum
+                enum_name = fmt_name.split("_")[0]
+                if enum_name == "I":
+                    enum_name = "I_FMT"
+                return cls[enum_name]
         return None
 
 MicrocodeEntry = Callable[[str, Dict[str, Any]], Dict[str, Any]]
 
 MICROCODE_ROM: Dict[Any, MicrocodeEntry] = {
-    (Phase.Fetch, FETCH_TOKEN): lambda name, s: {
+    (Phase.FETCH, FETCH_TOKEN): lambda name, s: {
         **s,
         "ir_we": True,
         "pc_we": True,
         "pc_src": SRC_INC,
     },
 
-    (Phase.Execute, HALT_TOKEN): lambda name, s: {
+    # DI_EX: when a HALT opcode is decoded, signal halt
+    (Phase.EXECUTE, HALT_TOKEN): lambda name, s: {
         **s,
         "halt": True,
     },
 
-    (Phase.Halt, HALT_TOKEN): lambda name, s: {
+    (Phase.HALT, HALT_TOKEN): lambda name, s: {
         **s,
         "halt": True,
     },
@@ -184,7 +192,7 @@ MICROCODE_ROM: Dict[Any, MicrocodeEntry] = {
         "reg_src": REG_SRC_ALU,
     },
 
-    InstructionFormat.I: lambda name, s: {
+    InstructionFormat.I_FMT: lambda name, s: {
         **s,
         "alu_op": ALU_OPS.get(name, ALU_ADD),
         "alu_exec": True,
@@ -278,14 +286,14 @@ MICROCODE_ROM: Dict[Any, MicrocodeEntry] = {
 
 class StateRegister:
     def __init__(self):
-        self._state = Phase.Fetch
+        self._state = Phase.FETCH
 
     def state(self) -> Phase:
         return self._state
 
     def clock(self, reset: bool = False, next_state: Optional[Phase] = None) -> None:
         if reset:
-            self._state = Phase.Fetch
+            self._state = Phase.FETCH
         elif next_state is not None:
             self._state = next_state
 
@@ -305,28 +313,34 @@ class ControlPath:
         if conditions is None:
             conditions = {}
 
-        if current == Phase.Fetch:
-            return Phase.Execute
+        # IF → ID/EX (Ibex 2-stage: fetch one cycle, decode+execute next)
+        if current == Phase.FETCH:
+            return Phase.EXECUTE
 
-        if current == Phase.Execute:
+        # ID/EX → IF (or Halt if HALT opcode decoded)
+        if current == Phase.EXECUTE:
             if name == HALT_TOKEN:
-                return Phase.Halt
-            return Phase.Fetch
+                return Phase.HALT
+            return Phase.FETCH
 
         if current == Phase.VecOp:
             if conditions.get("vec_done", False):
-                return Phase.Fetch
+                return Phase.FETCH
             return Phase.VecOp
 
-        if current == Phase.Halt:
-            return Phase.Halt
+        if current == Phase.HALT:
+            return Phase.HALT
 
-        return Phase.Fetch
+        return Phase.FETCH
 
     def _resolve_entry(self, current: Phase, name: str) -> Optional[MicrocodeEntry]:
-        if current == Phase.Fetch:
-            return MICROCODE_ROM.get((Phase.Fetch, FETCH_TOKEN))
+        # IF stage: always use the fetch microcode entry
+        if current == Phase.FETCH:
+            return MICROCODE_ROM.get((Phase.FETCH, FETCH_TOKEN))
 
+        # ID/EX stage: look for an exact (phase, opcode) entry first (e.g. HALT),
+        # then fall back to the instruction-format entry which encodes both
+        # decode (operand selection) and execute (ALU/Mem/WB) in one block.
         exact = MICROCODE_ROM.get((current, name))
         if exact is not None:
             return exact
@@ -346,6 +360,8 @@ class ControlPath:
         entry = self._resolve_entry(current, name)
 
         if entry is None:
+            # Add debugging information
+            print(f"DEBUG: No entry for opcode '{name}' (op={op}) in phase '{current.name}' (ir={ir:08X})")
             raise ValueError(f"No microcode entry for opcode '{name}' in phase '{current.name}'")
 
         return entry(name, signs)

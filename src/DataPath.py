@@ -11,12 +11,26 @@ control signals on each tick.  Key components:
 """
 
 from src.ISA import (
-    OPCODE_NAMES, REG_NAMES,
-    IN_PORT, OUT_PORT,
-    NUM_REGS, NUM_VREGS, VLANES, DATA_MEM_SIZE,
-    WORD_MASK, SIGN_BIT, REG_MASK,
-    IMM11_MASK, IMM11_SIGN, IMM21_MASK, IMM26_MASK,
-    OPCODE_SHIFT, OPCODE_MASK, RD_SHIFT, RS1_SHIFT, RS2_SHIFT,
+    DATA_MEM_SIZE,
+    IMM11_MASK,
+    IMM11_SIGN,
+    IMM21_MASK,
+    IMM26_MASK,
+    IN_PORT,
+    NUM_REGS,
+    NUM_VREGS,
+    OPCODE_MASK,
+    OPCODE_NAMES,
+    OPCODE_SHIFT,
+    OUT_PORT,
+    RD_SHIFT,
+    REG_MASK,
+    REG_NAMES,
+    RS1_SHIFT,
+    RS2_SHIFT,
+    SIGN_BIT,
+    VLANES,
+    WORD_MASK,
 )
 
 BYTE_MASK = 0xFF
@@ -186,24 +200,18 @@ class DataPath:
         imm = ir & IMM11_MASK
         return imm | ~IMM11_MASK if imm & IMM11_SIGN else imm
 
-    def tick(self, sigs, inst_word=None):
-
-        ir = self.ir
-        v_en = sigs.get("v_en", False)
-        alu_op = sigs.get("alu_op")
-        rd = (ir >> RD_SHIFT) & REG_MASK
-        halted = False
-        vec_a = None
-        vec_b = None
-
-        # === Phase 1: Fetch (IR latch) ===
+    def _fetch(self, sigs, inst_word, ir, rd):
         if sigs.get("ir_we") and inst_word is not None:
             ir = inst_word
             self.ir = ir
             rd = (ir >> RD_SHIFT) & REG_MASK
+        return ir, rd
 
-        # === Phase 2: Read A latch ===
+    def _read_latches(self, sigs, ir, v_en):
         a_val = 0
+        b_val = 0
+        vec_a, vec_b = None, None
+
         if sigs.get("a_sel") == "rs1":
             rs1 = (ir >> RS1_SHIFT) & REG_MASK
             if v_en:
@@ -213,8 +221,6 @@ class DataPath:
                 a_val = self.regs.read(rs1)
             self.a = a_val
 
-        # === Phase 3: Read B latch / immediate ===
-        b_val = 0
         b_sel = sigs.get("b_sel")
         if b_sel == "rs2":
             rs2 = (ir >> RS2_SHIFT) & REG_MASK
@@ -228,37 +234,39 @@ class DataPath:
             b_val = self._sext_imm11(ir)
         elif b_sel == "zero":
             b_val = 0
+        return a_val, b_val, vec_a, vec_b
 
-        # === Phase 4: ALU ===
+    def _alu_phase(self, sigs, v_en, vec_a, vec_b, a_val, b_val, rd):
+        alu_op = sigs.get("alu_op")
         self._vld_tmp = None
         if sigs.get("alu_exec") and alu_op:
             if v_en:
                 if vec_a is None:
                     vec_a = [self.a] * VLANES
                 if vec_b is None:
+                    b_sel = sigs.get("b_sel")
                     scalar_b = self.b if b_sel == "rs2" else b_val
                     vec_b = [scalar_b] * VLANES
-                
+
                 result = [0] * VLANES
                 for i in range(VLANES):
                     result[i] = self.alu.execute(alu_op, vec_a[i], vec_b[i])
-                
+
                 self.alu_out = result[0]
                 if sigs.get("reg_we"):
                     self.vregs.write(rd, result)
             else:
+                b_sel = sigs.get("b_sel")
                 a_op = self.a
                 b_op = self.b if b_sel == "rs2" else b_val
                 self.alu_out = self.alu.execute(alu_op, a_op, b_op)
 
-        # === Phase 5: Memory ===
+    def _memory_phase(self, sigs, rd, ir):
         addr = self.alu_out
         if sigs.get("mem_rd"):
             vec_n = sigs.get("mem_vec", 0)
             if vec_n == VLANES:
-                self._vld_tmp = [
-                    self.mem.load_word((addr + i) & WORD_MASK) for i in range(VLANES)
-                ]
+                self._vld_tmp = [self.mem.load_word((addr + i) & WORD_MASK) for i in range(VLANES)]
                 self.mdr = self._vld_tmp[0]
             elif sigs.get("mem_byte"):
                 self.mdr = self.mem.load_byte(addr)
@@ -278,7 +286,7 @@ class DataPath:
                 else:
                     self.mem.store_word(addr, data)
 
-        # === Phase 6: Register file write-back ===
+    def _write_back_phase(self, sigs, rd, ir, v_en):
         if sigs.get("reg_we"):
             reg_src = sigs.get("reg_src")
             if reg_src == "alu":
@@ -297,7 +305,7 @@ class DataPath:
             elif reg_src == "imm_shl11":
                 self.regs.write(rd, (ir & IMM21_MASK) << IMM11_MASK.bit_length())
 
-        # === Phase 7: PC update ===
+    def _pc_phase(self, sigs, ir, rd):
         pc_src = sigs.get("pc_src")
         if sigs.get("pc_we") and pc_src:
             if pc_src == "inc":
@@ -311,11 +319,54 @@ class DataPath:
             elif pc_src == "branch":
                 self._do_branch(ir)
 
-        # === Phase 8: Halt check ===
-        if sigs.get("halt"):
-            halted = True
+    def tick_di_ex(self, sigs, inst_word=None):
+        """ID/EX stage (Ibex 2-stage model): Decode + Execute in one clock cycle.
 
-        return halted
+        This mirrors the Ibex processor's ID/EX stage, where instruction
+        decoding and execution are fully combined:
+
+          1. Decode  — extract rs1 / rs2 / imm from IR into operand latches A, B
+          2. Execute — ALU operation (combinational)
+          3. Memory  — optional load/store access
+          4. Write-Back — result written to register file
+          5. PC update — branch / jump target resolved
+
+        The IR is already loaded by the preceding IF tick; `ir_we` is False here.
+        """
+        ir, rd = self._fetch(sigs, inst_word, self.ir, (self.ir >> RD_SHIFT) & REG_MASK)
+        v_en = sigs.get("v_en", False)
+        # --- Decode: read operands from register file ---
+        a_val, b_val, vec_a, vec_b = self._read_latches(sigs, ir, v_en)
+        # --- Execute: ALU ---
+        self._alu_phase(sigs, v_en, vec_a, vec_b, a_val, b_val, rd)
+        # --- Execute: Memory access ---
+        self._memory_phase(sigs, rd, ir)
+        # --- Write-Back: commit result to register file ---
+        self._write_back_phase(sigs, rd, ir, v_en)
+        # --- PC update: resolve branch/jump ---
+        self._pc_phase(sigs, ir, rd)
+        return sigs.get("halt", False)
+
+    def tick(self, sigs, inst_word=None):
+        """Clock the datapath for one cycle.
+
+        Dispatches to the appropriate stage sub-routine based on the active
+        control signals.  Following the Ibex 2-stage model:
+
+          IF    (ir_we=True)  — load IR from instruction memory, advance PC.
+          DI_EX (ir_we=False) — decode operands, execute ALU, access memory,
+                                 write back, and update PC for branches/jumps.
+
+        Both stages are fully contained in a single `dp.tick()` call driven by
+        the ControlPath's microcode signals.
+        """
+        if sigs.get("ir_we"):
+            # IF stage: latch the instruction word and increment PC
+            ir, rd = self._fetch(sigs, inst_word, self.ir, (self.ir >> RD_SHIFT) & REG_MASK)
+            self._pc_phase(sigs, ir, rd)
+            return sigs.get("halt", False)
+        # DI_EX stage: decode + execute
+        return self.tick_di_ex(sigs, inst_word)
 
     def _do_branch(self, ir):
         rs1 = (ir >> RS1_SHIFT) & REG_MASK
