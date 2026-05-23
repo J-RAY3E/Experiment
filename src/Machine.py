@@ -196,7 +196,7 @@ def main():
     if len(sys.argv) > 2:
         with open(sys.argv[2], encoding="utf-8") as f:
             input_text = f.read()
-            
+
     max_ticks = int(sys.argv[3]) if len(sys.argv) > 3 else 100_000
 
     m = Machine(bin_path, lst_path, input_text)

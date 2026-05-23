@@ -361,7 +361,10 @@ class ControlPath:
 
         if entry is None:
             # Add debugging information
-            print(f"DEBUG: No entry for opcode '{name}' (op={op}) in phase '{current.name}' (ir={ir:08X})")
+            print(
+                f"DEBUG: No entry for opcode '{name}' (op={op}) "
+                f"in phase '{current.name}' (ir={ir:08X})"
+            )
             raise ValueError(f"No microcode entry for opcode '{name}' in phase '{current.name}'")
 
         return entry(name, signs)

@@ -18,7 +18,7 @@ Register allocation is round-robin across t0-t6.
 
 import re
 
-from src.ISA import IMM11_MASK, IMM21_MASK, IN_PORT, OUT_PORT
+from src.ISA import IMM21_MASK, IN_PORT, OUT_PORT
 
 PRECEDENCE = [
     {"||"}, {"&&"}, {"|"}, {"^"}, {"&"},
@@ -248,7 +248,8 @@ class HL:
         reg = self._alloc_reg()
         # addr = (hi << 11) + lo, where lo is 11-bit signed
         lo = addr & 0x7FF
-        if lo >= 0x400: lo -= 0x800
+        if lo >= 0x400:
+            lo -= 0x800
         hi = (addr - lo) >> 11
         self._emit(f"LUI {reg}, {hi & IMM21_MASK}")
         if lo:
@@ -282,7 +283,7 @@ class HL:
 
         op = cond.op
         rs1, rs2 = cond.rs1, cond.rs2
-        
+
         # Map of op -> branch mnemonic when we want to jump if condition is FALSE (for BEQZ target)
         branch_map = {
             "==": "BNE", "!=": "BEQ",
@@ -469,7 +470,8 @@ class HL:
                 # Correct two-instruction sequence for 32-bit constants
                 # LUI shifts left by 11. ADDI adds a 11-bit signed immediate.
                 lo = val & 0x7FF
-                if lo >= 0x400: lo -= 0x800
+                if lo >= 0x400:
+                    lo -= 0x800
                 hi = (val - lo) >> 11
                 self._emit(f"LUI {reg}, {hi & IMM21_MASK}")
                 if lo:

@@ -1,6 +1,8 @@
 line-length = 100
+
+[lint]
 select = ["E", "F", "W", "C90", "I"]
 ignore = []
 
-[mccabe]
+[lint.mccabe]
 max-complexity = 15
