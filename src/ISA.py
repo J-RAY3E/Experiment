@@ -1,12 +1,3 @@
-"""ISA definitions for the RISC-IV processor.
-
-Single source of truth for opcodes, register names, instruction formats,
-bit-field constants, and encoding/decoding helpers.
-"""
-
-# ---------------------------------------------------------------------------
-# Bit-field widths
-# ---------------------------------------------------------------------------
 OPCODE_BITS = 6
 REG_BITS = 5
 IMM11_BITS = 11
@@ -14,9 +5,6 @@ IMM21_BITS = 21
 IMM26_BITS = 26
 WORD_BITS = 32
 
-# ---------------------------------------------------------------------------
-# Masks
-# ---------------------------------------------------------------------------
 OPCODE_MASK = 0x3F
 REG_MASK = 0x1F
 IMM11_MASK = 0x7FF
@@ -26,30 +14,20 @@ IMM26_MASK = 0x3FFFFFF
 WORD_MASK = 0xFFFFFFFF
 SIGN_BIT = 0x80000000
 
-# Shift amounts for field extraction
 OPCODE_SHIFT = 26
 RD_SHIFT = 21
 RS1_SHIFT = 16
 RS2_SHIFT = 11
 
-# ---------------------------------------------------------------------------
-# Memory-mapped I/O addresses
-# ---------------------------------------------------------------------------
 IN_PORT = 0xFFFFFFF0
 OUT_PORT = 0xFFFFFFF4
 
-# ---------------------------------------------------------------------------
-# Architecture parameters
-# ---------------------------------------------------------------------------
 NUM_REGS = 32
 NUM_VREGS = 8
 VLANES = 4
 DATA_MEM_SIZE = 8192
 STACK_BASE = 0x1000
 
-# ---------------------------------------------------------------------------
-# Opcodes
-# ---------------------------------------------------------------------------
 OPCODES = {
     "NOP": 0x00, "LW": 0x01, "SW": 0x02, "LB": 0x03, "SB": 0x04, "LUI": 0x05,
     "ADD": 0x06, "SUB": 0x07, "MUL": 0x08, "DIV": 0x09, "REM": 0x0A, "MULH": 0x0B,
@@ -67,9 +45,6 @@ OPCODES = {
 
 OPCODE_NAMES = {v: k for k, v in OPCODES.items()}
 
-# ---------------------------------------------------------------------------
-# Register file
-# ---------------------------------------------------------------------------
 REG_NAMES = [
     "zero", "ra", "sp", "gp", "a0", "a1", "a2", "a3",
     "a4", "a5", "a6", "a7", "t0", "t1", "t2", "t3",
@@ -79,9 +54,6 @@ REG_NAMES = [
 
 REG = {n: i for i, n in enumerate(REG_NAMES)}
 
-# ---------------------------------------------------------------------------
-# Instruction format sets
-# ---------------------------------------------------------------------------
 R_FORMAT = {"ADD", "SUB", "MUL", "DIV", "REM", "MULH",
             "AND", "OR", "XOR", "NOT", "SLL", "SRL", "SRA", "SLT", "NOP"}
 I_FORMAT = {"ADDI", "ANDI", "ORI", "XORI", "SLLI", "SRLI", "SRAI", "SLTI"}
@@ -98,47 +70,26 @@ VL_FORMAT = {"VLD", "VST"}
 R_IL_FORMAT = R_FORMAT | I_FORMAT | L_FORMAT
 R_ILV_FORMAT = R_IL_FORMAT | V_FORMAT
 
-# ---------------------------------------------------------------------------
-# HALT opcode word (pre-computed)
-# ---------------------------------------------------------------------------
 HALT_WORD = OPCODES["HALT"] << OPCODE_SHIFT
 
-
-# ---------------------------------------------------------------------------
-# Helpers
-# ---------------------------------------------------------------------------
-def sign_extend(value, bits=IMM11_BITS):
-    """Sign-extend *value* from *bits* width to a Python int."""
-    if value & (1 << (bits - 1)):
-        return value - (1 << bits)
-    return value
-
-
 def _sext11(imm):
-    """Sign-extend an 11-bit immediate."""
-    if imm & IMM11_SIGN:
-        return imm | ~IMM11_MASK
-    return imm
-
+    return imm | ~IMM11_MASK if imm & IMM11_SIGN else imm
 
 def decode(word):
-    """Decode a 32-bit instruction word into its fields."""
     op = (word >> OPCODE_SHIFT) & OPCODE_MASK
     name = OPCODE_NAMES.get(op, "???")
-    d = {"opcode": op, "name": name, "word": word}
-    d["rd"] = (word >> RD_SHIFT) & REG_MASK
-    d["rs1"] = (word >> RS1_SHIFT) & REG_MASK
-    d["rs2"] = (word >> RS2_SHIFT) & REG_MASK
-    imm11 = word & IMM11_MASK
-    d["imm"] = imm11
-    d["imm_s"] = _sext11(imm11)
-    d["imm_u21"] = word & IMM21_MASK
-    d["imm_u26"] = word & IMM26_MASK
-    return d
-
+    return {
+        "opcode": op, "name": name, "word": word,
+        "rd": (word >> RD_SHIFT) & REG_MASK,
+        "rs1": (word >> RS1_SHIFT) & REG_MASK,
+        "rs2": (word >> RS2_SHIFT) & REG_MASK,
+        "imm": word & IMM11_MASK,
+        "imm_s": _sext11(word & IMM11_MASK),
+        "imm_u21": word & IMM21_MASK,
+        "imm_u26": word & IMM26_MASK,
+    }
 
 def encode(opcode, rd=0, rs1=0, rs2=0, imm=0):
-    """Encode fields into a 32-bit instruction word."""
     name = OPCODE_NAMES.get(opcode, "")
     s1 = (rd & REG_MASK) << RD_SHIFT
     s2 = (rs1 & REG_MASK) << RS1_SHIFT
@@ -146,34 +97,19 @@ def encode(opcode, rd=0, rs1=0, rs2=0, imm=0):
     im = imm & IMM11_MASK
 
     if name in R_FORMAT | V_FORMAT:
-        if name == "NOT":
-            return (opcode << OPCODE_SHIFT) | s1 | s2
-        if name == "NOP":
-            return 0
+        if name == "NOT": return (opcode << OPCODE_SHIFT) | s1 | s2
+        if name == "NOP": return 0
         return (opcode << OPCODE_SHIFT) | s1 | s2 | s3
-
-    if name in I_FORMAT | L_FORMAT | VL_FORMAT:
+    if name in I_FORMAT | L_FORMAT | VL_FORMAT | S_FORMAT:
         return (opcode << OPCODE_SHIFT) | s1 | s2 | im
-
-    if name in S_FORMAT:
-        return (opcode << OPCODE_SHIFT) | s1 | s2 | im
-
     if name in B_FORMAT:
         return (opcode << OPCODE_SHIFT) | s2 | s3 | im
-
-    if name in U_FORMAT:
+    if name in U_FORMAT | JL_FORMAT:
         return (opcode << OPCODE_SHIFT) | s1 | (imm & IMM21_MASK)
-
     if name in J_FORMAT:
         return (opcode << OPCODE_SHIFT) | (imm & IMM26_MASK)
-
-    if name in JL_FORMAT:
-        return (opcode << OPCODE_SHIFT) | s1 | (imm & IMM21_MASK)
-
-    if name in JR_FORMAT:
+    if name == "JR":
         return (opcode << OPCODE_SHIFT) | s1
-
     if name == "HALT":
         return HALT_WORD
-
     return (opcode << OPCODE_SHIFT) | s1 | s2 | s3 | im
