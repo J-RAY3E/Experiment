@@ -213,7 +213,10 @@ class HL:
 
     def _emit_branch(self, cond, label, invert=False):
         if not isinstance(cond, tuple):
-            self._emit(f"{'BNEZ' if invert else 'BEQZ'} {self._ensure_reg(cond)}, {label}")
+            reg = self._ensure_reg(cond)
+            # Map single condition to BEQ/BNE with zero register
+            op = "BNE" if invert else "BEQ"
+            self._emit(f"{op} {reg}, zero, {label}")
             return
         op, rs1, rs2 = cond
         bm_norm = {"==": "BNE", "!=": "BEQ", "<": "BGE", ">=": "BLT", ">": "BLE", "<=": "BGT"}
