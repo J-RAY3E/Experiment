@@ -1,45 +1,56 @@
-import os
 import re
 import struct
 import sys
+from pathlib import Path
+from typing import Any
 
-from src.ControlPath import ControlPath, UROM_NAMES
-from src.DataPath import DataPath
-from src.ISA import REG, REG_NAMES, STACK_BASE, decode
+from src.control_path import ControlPath
+from src.data_path import DataPath
+from src.isa import REG, REG_NAMES, STACK_BASE, decode
 
 
-def load_binary(bin_path: str, lst_path: str | None = None):
-    """Load a binary file into instruction and data word lists."""
+def load_binary(bin_path: str, lst_path: str | None = None) -> tuple[list[int], dict[int, int], int]:
+    """Load a binary file into instruction and data word lists.
+
+    Returns:
+        instr_words: instruction memory (list indexed by PC)
+        data_map:    data memory map {logical_address: word_value}
+        data_base:   base address of data section (for gp register)
+    """
     with open(bin_path, "rb") as f:
         raw = f.read()
     words = [struct.unpack("<I", raw[i : i + 4])[0] for i in range(0, len(raw), 4)]
 
     instr_words: list[int] = []
-    data_words:  list[int] = []
-    data_base:   int       = 0
+    data_map: dict[int, int] = {}
+    data_base: int = 0
 
-    if lst_path and os.path.exists(lst_path):
+    if lst_path and Path(lst_path).exists():
         with open(lst_path, encoding="utf-8") as f:
             content = f.read()
-        addresses = [
-            int(m.group(1), 16)
-            for m in re.finditer(r"^([0-9A-Fa-f]+)\s+-", content, re.M)
-        ]
-        max_addr = max(addresses) if addresses else -1
-        if max_addr >= 0:
-            orgs = re.findall(r"\.org\s+(\d+)", content)
-            for o in orgs:
-                if int(o) > max_addr:
-                    data_base = int(o)
+        addr_word_pairs = re.findall(r"^([0-9A-Fa-f]+)\s+-\s+([0-9A-Fa-f]+)\s+-", content, re.M)
+        if addr_word_pairs:
+            word_addrs = [int(a, 16) for a, _w in addr_word_pairs]
+            sorted_addrs = sorted(set(word_addrs))
+            split = len(sorted_addrs)
+            for i, a in enumerate(sorted_addrs):
+                if a != i:
+                    split = i
+                    data_base = a
                     break
-            n = max_addr + 1
-            instr_words = words[: min(n, len(words))]
-            data_words  = words[min(n, len(words)) :]
+            instr_by_addr: dict[int, int] = {}
+            for (a_str, w_str), logical_addr in zip(addr_word_pairs, word_addrs):
+                if logical_addr < split and logical_addr not in instr_by_addr:
+                    instr_by_addr[logical_addr] = int(w_str, 16)
+            instr_words = [instr_by_addr.get(i, 0) for i in range(split)]
+            for logical_addr, (a_str, w_str) in zip(word_addrs, addr_word_pairs):
+                if logical_addr >= split:
+                    data_map[logical_addr] = int(w_str, 16)
 
     if not instr_words:
-        instr_words, data_words = list(words), []
+        instr_words = list(words)
 
-    return instr_words, data_words, data_base
+    return instr_words, data_map, data_base
 
 
 class Machine:
@@ -50,116 +61,153 @@ class Machine:
     micro-step (one µROM entry).  The journal records every micro-step.
     """
 
-    def __init__(self, bin_path: str, lst_path: str | None = None,
-                 input_text: str = "") -> None:
-        instr_words, data_words, data_base = load_binary(bin_path, lst_path)
+    def __init__(self, bin_path: str, lst_path: str | None = None, input_text: str = "") -> None:
+        instr_words, data_map, data_base = load_binary(bin_path, lst_path)
         self.instr_mem: list[int] = instr_words
         self.dp = DataPath(input_text)
-        for i, w in enumerate(data_words):
-            self.dp.mem.mem[data_base + i] = w
+        for addr, w in data_map.items():
+            self.dp.mem.mem[addr] = w
         self.dp.regs.write(REG["gp"], data_base)
         self.dp.regs.write(REG["sp"], STACK_BASE)
-        self.cp         = ControlPath()
-        self.halted     = False
+        self.cp = ControlPath()
+        self.halted = False
         self.tick_count = 0
-        self.snapshots: list[dict] = []
+        self.snapshots: list[dict[str, Any]] = []
 
-    # ── Snapshot ──────────────────────────────────────────────────────────
     def _snapshot(self, mi_name: str) -> None:
         d = self.dp
-        self.snapshots.append({
-            "tick":    self.tick_count,
-            "upc":     self.cp.upc,
-            "phase":   mi_name,
-            "pc":      d.pc,
-            "ir":      d.ir,
-            "a":       d.a,
-            "b":       d.b,
-            "alu_out": d.alu_out,
-            "mdr":     d.mdr,
-        })
+        self.snapshots.append(
+            {
+                "tick": self.tick_count,
+                "upc": self.cp.upc,
+                "phase": mi_name,
+                "pc": d.pc,
+                "ir": d.ir,
+                "a": d.a,
+                "b": d.b,
+                "alu_out": d.alu_out,
+                "mdr": d.mdr,
+            }
+        )
 
-    # ── Single micro-tick ─────────────────────────────────────────────────
     def tick(self) -> None:
         if self.halted:
             return
         self.tick_count += 1
 
-        ir       = self.dp.ir
-        mi       = self.cp.current_mi(ir)
-        mi_name  = self.cp.phase_name
-
-        # On FETCH: read the instruction word from instr_mem at current PC
+        ir = self.dp.ir
+        mi = self.cp.current_mi(ir)
+        mi_name = self.cp.phase_name
         inst_word: int | None = None
         if mi.ir_we and 0 <= self.dp.pc < len(self.instr_mem):
             inst_word = self.instr_mem[self.dp.pc]
 
         done = self.dp.tick(mi, inst_word)
-
-        # Advance µPC using the IR that was just loaded (new ir after FETCH)
-        self.cp.advance(self.dp.ir)
-
         self._snapshot(mi_name)
+        self.cp.advance(self.dp.ir)
 
         if done:
             self.halted = True
 
-    # ── Run ───────────────────────────────────────────────────────────────
     def run(self, max_ticks: int = 200000) -> str:
         while not self.halted and self.tick_count < max_ticks:
             self.tick()
-        return "".join(
-            chr(c) if isinstance(c, int) and 0 <= c < 256 else str(c)
-            for c in self.dp.output_buffer
-        )
+        return "".join(chr(c) if isinstance(c, int) and 0 <= c < 256 else str(c) for c in self.dp.output_buffer)
 
-    # ── Journal ───────────────────────────────────────────────────────────
     def get_journal(self) -> str:
         lines: list[str] = []
         for s in self.snapshots:
-            ir    = s["ir"]
-            phase = s["phase"]
-            tick  = s["tick"]
-            upc   = s["upc"]
-            pc    = s["pc"]
-            name  = decode(ir)["name"]
-            line  = (
-                f"TICK: {tick:>6}  UPC: {upc:>2}  PHASE: {phase:<8}"
-                f"  PC: {pc:04X}  IR: {ir:08X}  CMD: {name:>5}"
+            tick = s["tick"]
+            upc = s["upc"]
+            pc = s["pc"]
+            ir = s["ir"]
+            d_ctx = decode(ir)
+            mnem = d_ctx["name"]
+
+            saved_upc = self.cp.seq.upc
+            self.cp.seq.upc = s["upc"]
+            mi = self.cp.seq.current_mi(ir)
+            self.cp.seq.upc = saved_upc
+            sigs = []
+            if mi.ir_we:
+                sigs.append("ir_we")
+            if mi.pc_inc:
+                sigs.append("pc+1")
+            if mi.mar_we:
+                sigs.append("mar_we")
+            if mi.mem_rd:
+                sigs.append("mem_rd")
+            if mi.mem_wr:
+                sigs.append("mem_wr")
+            if mi.reg_we:
+                sigs.append("reg_we")
+            sigs_str = ",".join(sigs) if sigs else "none"
+
+            r_parts = [f"PC={pc}", f"AR={self.dp.mar}", f"DR={self.dp.mdr}"]
+            for i in range(16):
+                name = REG_NAMES[i].upper()
+                val = self.dp.regs.read(i)
+                r_parts.append(f"{name}={val}")
+            regs_str = " ".join(r_parts)
+
+            out_str = "".join(chr(c) for c in self.dp.output_buffer if 0 <= c < 256)
+
+            line = (
+                f"Tick: {tick:06d} | uPC: {upc:02X} | MIR: {mi.mir_word:08X} | "
+                f"PC: {pc:04X} | IR: {ir:08X} | Micro: {s['phase']} | "
+                f"Signals: {sigs_str} | Exec: {mnem} | "
+                f"Regs: {regs_str} | Out: {out_str!r}"
             )
-            if phase not in ("FETCH", "NOP_EX", "HALT_EX", "J_EX"):
-                line += f"  A: {s['a']:08X}  B: {s['b']:08X}"
-            if phase in (
-                "R_EX", "I_EX", "L_EX1", "S_EX",
-                "V_EX", "VLD_EX1", "VST_EX",
-            ):
-                line += f"  ALU: {s['alu_out']:08X}"
-            if phase in ("L_EX2", "VLD_EX2"):
-                line += f"  MDR: {s['mdr']:08X}"
             lines.append(line)
         return "\n".join(lines)
 
-    # ── Register dump ─────────────────────────────────────────────────────
-    def dump_registers(self) -> dict:
+    def dump_registers(self) -> dict[str, int]:
         return {REG_NAMES[i]: self.dp.regs.regs[i] for i in range(len(REG_NAMES))}
 
+    def write_outputs(self, target_prefix: str) -> None:
+        import struct
 
-def main() -> None:
+        cmem_data = struct.pack(f"<{len(self.instr_mem)}I", *self.instr_mem)
+        with open(target_prefix + ".cmem", "wb") as f:
+            f.write(cmem_data)
+        hex_str = " ".join(f"{w:08X}" for w in self.instr_mem)
+        with open(target_prefix + ".hex", "w", encoding="utf-8") as f:
+            f.write(hex_str + "\n")
+        words = [w for w in self.dp.mem.mem if w != 0]
+        mem_data = struct.pack(f"<{len(words)}I", *words) if words else b""
+        with open(target_prefix + ".mem", "wb") as f:
+            f.write(mem_data)
+        mem_hex = " ".join(f"{w:08X}" for w in words)
+        with open(target_prefix + ".mem.hex", "w", encoding="utf-8") as f:
+            f.write(mem_hex + "\n" if mem_hex else "\n")
+
+
+def main(target_prefix: str = "", input_path: str = "", limit: int = 200000) -> str | None:
+    if target_prefix:
+        bin_path = target_prefix + ".bin"
+        lst_path: str | None = target_prefix + ".lst"
+        if lst_path is not None and not Path(lst_path).exists():
+            lst_path = None
+        input_text = open(input_path).read() if input_path else ""
+        m = Machine(bin_path, lst_path, input_text)
+        out = m.run(max_ticks=limit)
+        m.write_outputs(target_prefix)
+        return out
+
     if len(sys.argv) < 2:
         print("Usage: python -m src.Machine <binary.bin> [input.txt] [max_ticks]")
         sys.exit(1)
 
-    bin_path  = sys.argv[1]
-    lst_path  = bin_path.replace(".bin", ".lst")
-    if not os.path.exists(lst_path):
-        lst_path = None
+    bin_path = sys.argv[1]
+    lst_candidate = bin_path.replace(".bin", ".lst")
+    lst_path = lst_candidate if Path(lst_candidate).exists() else None
     input_text = open(sys.argv[2]).read() if len(sys.argv) > 2 else ""
-    max_ticks  = int(sys.argv[3]) if len(sys.argv) > 3 else 200000
+    max_ticks = int(sys.argv[3]) if len(sys.argv) > 3 else 200000
 
-    m   = Machine(bin_path, lst_path, input_text)
+    m = Machine(bin_path, lst_path, input_text)
     out = m.run(max_ticks=max_ticks)
 
-    print(f"Output:\n{repr(out)}\n")
+    print(f"Output:\n{out!r}\n")
     journal_lines = m.get_journal().split("\n")
     print(f"Journal (last 40 of {len(journal_lines)} micro-steps):")
     for line in journal_lines[-40:]:
@@ -170,6 +218,7 @@ def main() -> None:
     for k, v in m.dump_registers().items():
         if v:
             print(f"  {k:4}: {v} (0x{v:08X})")
+    return None
 
 
 if __name__ == "__main__":

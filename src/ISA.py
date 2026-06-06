@@ -1,3 +1,7 @@
+from __future__ import annotations
+
+from typing import Any
+
 OPCODE_BITS = 6
 REG_BITS = 5
 IMM11_BITS = 11
@@ -29,34 +33,96 @@ DATA_MEM_SIZE = 8192
 STACK_BASE = 0x1000
 
 OPCODES = {
-    "NOP": 0x00, "LW": 0x01, "SW": 0x02, "LB": 0x03, "SB": 0x04, "LUI": 0x05,
-    "ADD": 0x06, "SUB": 0x07, "MUL": 0x08, "DIV": 0x09, "REM": 0x0A, "MULH": 0x0B,
-    "AND": 0x0C, "OR": 0x0D, "XOR": 0x0E, "NOT": 0x0F,
-    "SLL": 0x10, "SRL": 0x11, "SRA": 0x12, "SLT": 0x13,
-    "ADDI": 0x14, "ANDI": 0x15, "ORI": 0x16, "XORI": 0x17,
-    "SLLI": 0x18, "SRLI": 0x19, "SRAI": 0x1A, "SLTI": 0x1B,
-    "BEQ": 0x20, "BNE": 0x21, "BLT": 0x22, "BLE": 0x23,
-    "BGT": 0x24, "BGE": 0x25, "BGTU": 0x26, "BLEU": 0x27,
-    "J": 0x28, "JAL": 0x29, "JR": 0x2A,
-    "VADD": 0x30, "VSUB": 0x31, "VMUL": 0x32, "VDIV": 0x33,
-    "VLD": 0x34, "VST": 0x35, "VCMP": 0x36,
+    "NOP": 0x00,
+    "LW": 0x01,
+    "SW": 0x02,
+    "LB": 0x03,
+    "SB": 0x04,
+    "LUI": 0x05,
+    "ADD": 0x06,
+    "SUB": 0x07,
+    "MUL": 0x08,
+    "DIV": 0x09,
+    "REM": 0x0A,
+    "MULH": 0x0B,
+    "AND": 0x0C,
+    "OR": 0x0D,
+    "XOR": 0x0E,
+    "NOT": 0x0F,
+    "SLL": 0x10,
+    "SRL": 0x11,
+    "SRA": 0x12,
+    "SLT": 0x13,
+    "ADDI": 0x14,
+    "ANDI": 0x15,
+    "ORI": 0x16,
+    "XORI": 0x17,
+    "SLLI": 0x18,
+    "SRLI": 0x19,
+    "SRAI": 0x1A,
+    "SLTI": 0x1B,
+    "BEQ": 0x20,
+    "BNE": 0x21,
+    "BLT": 0x22,
+    "BLE": 0x23,
+    "BGT": 0x24,
+    "BGE": 0x25,
+    "BGTU": 0x26,
+    "BLEU": 0x27,
+    "J": 0x28,
+    "JAL": 0x29,
+    "JR": 0x2A,
+    "VADD": 0x30,
+    "VSUB": 0x31,
+    "VMUL": 0x32,
+    "VDIV": 0x33,
+    "VLD": 0x34,
+    "VST": 0x35,
+    "VCMP": 0x36,
     "HALT": 0x3F,
 }
 
 OPCODE_NAMES = {v: k for k, v in OPCODES.items()}
 
 REG_NAMES = [
-    "zero", "ra", "sp", "gp", "a0", "a1", "a2", "a3",
-    "a4", "a5", "a6", "a7", "t0", "t1", "t2", "t3",
-    "t4", "t5", "s0", "s1", "s2", "s3", "s4", "s5",
-    "s6", "s7", "s8", "s9", "s10", "s11", "t6", "tp",
+    "zero",
+    "ra",
+    "sp",
+    "gp",
+    "a0",
+    "a1",
+    "a2",
+    "a3",
+    "a4",
+    "a5",
+    "a6",
+    "a7",
+    "t0",
+    "t1",
+    "t2",
+    "t3",
+    "t4",
+    "t5",
+    "s0",
+    "s1",
+    "s2",
+    "s3",
+    "s4",
+    "s5",
+    "s6",
+    "s7",
+    "s8",
+    "s9",
+    "s10",
+    "s11",
+    "t6",
+    "tp",
 ]
 
 REG = {n: i for i, n in enumerate(REG_NAMES)}
 
-R_FORMAT = {"ADD", "SUB", "MUL", "DIV", "REM", "MULH",
-            "AND", "OR", "XOR", "NOT", "SLL", "SRL", "SRA", "SLT", "NOP"}
-I_FORMAT = {"ADDI", "ANDI", "ORI", "XORI", "SLLI", "SRLI", "SRAI", "SLTI"}
+R_FORMAT = {"ADD","SUB","MUL","DIV","REM","MULH","AND","OR","XOR","NOT","SLL","SRL","SRA","SLT","NOP"}
+I_FORMAT = {"ADDI","ANDI", "ORI", "XORI", "SLLI", "SRLI", "SRAI", "SLTI"}
 L_FORMAT = {"LW", "LB"}
 S_FORMAT = {"SW", "SB"}
 B_FORMAT = {"BEQ", "BNE", "BLT", "BLE", "BGT", "BGE", "BGTU", "BLEU"}
@@ -72,14 +138,16 @@ R_ILV_FORMAT = R_IL_FORMAT | V_FORMAT
 
 HALT_WORD = OPCODES["HALT"] << OPCODE_SHIFT
 
-def _sext11(imm):
+def _sext11(imm: int) -> int:
     return imm | ~IMM11_MASK if imm & IMM11_SIGN else imm
 
-def decode(word):
+def decode(word: int) -> dict[str, Any]:
     op = (word >> OPCODE_SHIFT) & OPCODE_MASK
     name = OPCODE_NAMES.get(op, "???")
     return {
-        "opcode": op, "name": name, "word": word,
+        "opcode": op,
+        "name": name,
+        "word": word,
         "rd": (word >> RD_SHIFT) & REG_MASK,
         "rs1": (word >> RS1_SHIFT) & REG_MASK,
         "rs2": (word >> RS2_SHIFT) & REG_MASK,
@@ -89,7 +157,7 @@ def decode(word):
         "imm_u26": word & IMM26_MASK,
     }
 
-def encode(opcode, rd=0, rs1=0, rs2=0, imm=0):
+def encode(opcode: int, rd: int = 0, rs1: int = 0, rs2: int = 0, imm: int = 0) -> int:
     name = OPCODE_NAMES.get(opcode, "")
     s1 = (rd & REG_MASK) << RD_SHIFT
     s2 = (rs1 & REG_MASK) << RS1_SHIFT
@@ -97,8 +165,10 @@ def encode(opcode, rd=0, rs1=0, rs2=0, imm=0):
     im = imm & IMM11_MASK
 
     if name in R_FORMAT | V_FORMAT:
-        if name == "NOT": return (opcode << OPCODE_SHIFT) | s1 | s2
-        if name == "NOP": return 0
+        if name == "NOT":
+            return (opcode << OPCODE_SHIFT) | s1 | s2
+        if name == "NOP":
+            return 0
         return (opcode << OPCODE_SHIFT) | s1 | s2 | s3
     if name in I_FORMAT | L_FORMAT | VL_FORMAT | S_FORMAT:
         return (opcode << OPCODE_SHIFT) | s1 | s2 | im

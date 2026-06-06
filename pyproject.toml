@@ -1,0 +1,35 @@
+[tool.setuptools]
+py-modules = ["isa", "translator", "machine"]
+
+[build-system]
+requires = ["setuptools >= 77.0.3"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "csa-lab4"
+version = "0.1"
+requires-python = ">=3.11"
+dependencies = ["PyYAML~=6.0.2", "pytest>=9.0", "pytest-golden>=1.0", "ruff", "mypy"]
+
+[tool.pytest.ini_options]
+enable_assertion_pass_hook = true
+pythonpath = ["src", "."]
+
+[tool.ruff]
+line-length = 130
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["F", "E", "W", "N", "I", "C90", "UP", "ERA", "YTT", "ASYNC", "A", "COM", "ICN", "PT", "Q", "RET", "PTH", "TRY", "RUF"]
+ignore = ["COM812", "E501", "T201", "RUF002", "RUF003", "PTH123", "UP032", "C901", "TRY003", "INP001"]
+unfixable = ["ERA001"]
+
+[tool.mypy]
+python_version = "3.11"
+check_untyped_defs = true
+warn_return_any = true
+no_implicit_optional = true
+strict_equality = true
+warn_unused_ignores = true
+disallow_any_generics = true
+no_implicit_reexport = true

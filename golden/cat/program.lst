@@ -1,6 +1,0 @@
-        .org 0
-0000 - 058007F0 - LW t0 zero 0xFFF0
-0001 - 800C0002 - BEQ t0 zero done
-0002 - 098007F4 - SW t0 zero 0xFFF4
-0003 - A0000000 - J loop
-0004 - FC000000 - HALT 

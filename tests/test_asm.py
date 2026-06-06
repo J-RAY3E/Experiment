@@ -1,83 +1,85 @@
-import os
-import sys
+from __future__ import annotations
 
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from src.assembler import assemble
+import struct
+import tempfile
+from pathlib import Path
 
-ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+import pytest
 
-def write_bin(src, bin_path, lst_path):
-    data, lst = assemble(src)
-    with open(bin_path, "wb") as f:
-        f.write(data)
-    with open(lst_path, "w", encoding="utf-8") as f:
-        f.write("\n".join(lst))
-    return len(data) // 4, lst
+from src.translator import assemble, imm, main, rnum
 
-tests = {
-    "sum": """
-.org 0
-start:
-    LW r1, gp, 0
-    LW r2, gp, 1
-    ADD r3, r1, r2
-    SW r3, gp, 2
-    ADDI r4, r3, 48
-    SW r4, zero, 0xFFF4
+
+def test_rnum() -> None:
+    assert rnum("zero") == 0
+    assert rnum("s0") == 18
+    assert rnum("ra") == 1
+    assert rnum("r5") == 5
+    with pytest.raises(ValueError, match="bad register"):
+        rnum("bad")
+
+
+def test_imm() -> None:
+    assert imm("42") == 42
+    assert imm("0xFF") == 255
+    assert imm("0X10") == 16
+
+
+def test_assemble_halt() -> None:
+    data, _lst = assemble("HALT")
+    assert len(data) == 4
+    assert data == struct.pack("<I", 0xFC000000)
+
+
+def test_assemble_nop() -> None:
+    data, _lst = assemble("NOP")
+    assert len(data) == 4
+
+
+def test_assemble_addi() -> None:
+    data, _lst = assemble("ADDI s0, zero, 42")
+    assert len(data) == 4
+
+
+def test_assemble_with_label() -> None:
+    src = """
+    ADDI s0, zero, 10
+loop:
+    ADDI s0, s0, -1
+    BNE zero, s0, loop
     HALT
+"""
+    data, _lst = assemble(src)
+    assert len(data) == 16
+
+
+def test_assemble_pseudo_mv() -> None:
+    data, _lst = assemble("MV s0, s1")
+    assert len(data) == 4
+
+
+def test_assemble_pseudo_li_small() -> None:
+    data, _lst = assemble("LI s0, 42")
+    assert len(data) == 4
+
+
+def test_assemble_org_word() -> None:
+    src = """
 .org 100
-    .word 12
-    .word 30
-    .word 0
-""",
-    "countdown": """
-.org 0
-    LI r1, 5
-loop:
-    BEQZ r1, end
-    ADDI r2, r1, 48
-    SW r2, zero, 0xFFF4
-    ADDI r1, r1, -1
-    J loop
-end:
-    LI r3, 10
-    SW r3, zero, 0xFFF4
-    HALT
-""",
-    "pstr": """
-.org 0
-    LUI r1, 0
-    LW r2, r1, 0
-    LI r3, 0
-loop:
-    BLT r3, r2, body
-    J end
-body:
-    ADDI r4, r1, 1
-    ADD r5, r4, r3
-    LW r6, r5, 0
-    SW r6, zero, 0xFFF4
-    ADDI r3, r3, 1
-    J loop
-end:
-    HALT
-.org 0
-    .string "Hi!"
-""",
-}
+.word 1 2 3
+"""
+    data, _lst = assemble(src)
+    assert len(data) == 12
 
-passes = fails = 0
-for name, src in tests.items():
-    lst = []
-    try:
-        n, lst = write_bin(src, f"tests/{name}.bin", f"tests/{name}.lst")
-        print(f"  OK  {name}: {n} instructions")
-        passes += 1
-    except Exception as e:
-        print(f"  FAIL {name}: {e}")
-        fails += 1
-    for line in lst:
-        print(f"    {line}")
 
-print(f"\n{passes}/{passes+fails} passed")
-sys.exit(0 if fails == 0 else 1)
+def test_main_roundtrip() -> None:
+    src = "ADDI s0, zero, 7\nHALT\n"
+    with tempfile.TemporaryDirectory() as tmp:
+        tmpdir = Path(tmp)
+        src_path = tmpdir / "test.asm"
+        src_path.write_text(src, encoding="utf-8")
+        n_words = main(str(src_path), str(tmpdir / "out"))
+        assert n_words == 2
+        bin_path = tmpdir / "out.bin"
+        assert bin_path.exists()
+        data = bin_path.read_bytes()
+        assert len(data) == 8

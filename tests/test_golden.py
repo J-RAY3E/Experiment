@@ -1,143 +1,134 @@
-"""Golden test runner for the RISC-IV processor.
+from __future__ import annotations
 
-Each subdirectory in golden/ is a test case containing:
-  - source.asm          — assembly source code
-  - input.txt           — input stream data (may be empty)
-  - expected_output.txt — expected output from the processor
-
-The runner assembles the source, simulates it, and compares the actual
-output against expected_output.txt.  It also saves the processor journal
-for each test case.
-
-Usage:
-    python tests/test_golden.py           # run all golden tests
-    python tests/test_golden.py hello     # run only the 'hello' test
-"""
-
+import contextlib
+import io
+import logging
 import os
-import sys
+import tempfile
+from pathlib import Path
+from typing import Any
 
+import pytest
 import yaml
 
-# Ensure project root is on the path
-ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.insert(0, ROOT)
+import machine
+import translator
 
-# Force block style for multi-line strings
-def str_presenter(dumper, data):
-    if '\n' in data:
-        return dumper.represent_scalar('tag:yaml.org,2002:str', data, style='|')
-    return dumper.represent_scalar('tag:yaml.org,2002:str', data)
+MAX_LOG = 700
+UPDATE_GOLDENS = os.environ.get("UPDATE_GOLDENS") == "1"
 
-yaml.add_representer(str, str_presenter)
-
-from src.assembler import write_binary  # noqa: E402
-from src.Machine import Machine  # noqa: E402
-
-GOLDEN_DIR = os.path.join(ROOT, "golden")
-MAX_TICKS = 50_000_000
+GOLDEN_DIR = Path(__file__).parent.parent / "golden"
 
 
-def discover_cases(filter_name=None):
-    """Find all test case directories in golden/."""
+class SingleLineDumper(yaml.SafeDumper):
+    def represent_str(self, data: str):
+        if "\n" in data:
+            return self.represent_scalar("tag:yaml.org,2002:str", data, style="|")
+        return self.represent_scalar("tag:yaml.org,2002:str", data)
+
+
+SingleLineDumper.add_representer(str, SingleLineDumper.represent_str)
+
+
+def _make_single_line(data: str) -> str:
+    return data.replace("\n", r"\n").replace("\r", "")
+
+
+def load_golden_cases() -> list[tuple[Path, dict[str, Any]]]:
     cases = []
-    if not os.path.isdir(GOLDEN_DIR):
-        return cases
-    for name in sorted(os.listdir(GOLDEN_DIR)):
-        path = os.path.join(GOLDEN_DIR, name)
-        if os.path.isdir(path) and os.path.exists(os.path.join(path, "source.asm")):
-            if filter_name and name != filter_name:
-                continue
-            cases.append(name)
+    for yaml_path in sorted(GOLDEN_DIR.glob("**/*.yaml")):
+        with open(yaml_path, encoding="utf-8") as f:
+            data = yaml.safe_load(f)
+        cases.append((yaml_path, data))
     return cases
 
 
-def run_case(name, update=False):
-    """Assemble, simulate, and compare output for one test case.
+def run_test_case(in_source: str, in_stdin: str, limit: int) -> dict[str, Any]:
+    with tempfile.TemporaryDirectory() as tmpdirname:
+        tmpdir = Path(tmpdirname)
+        source = tmpdir / "source.asm"
+        target = str(tmpdir / "source")
 
-    Returns (passed: bool, actual_output: str, expected_output: str, ticks: int).
-    """
-    base = os.path.join(GOLDEN_DIR, name)
-    src_path = os.path.join(base, "source.asm")
-    inp_path = os.path.join(base, "input.txt")
-    exp_path = os.path.join(base, "expected_output.txt")
+        with open(source, "w", encoding="utf-8") as f:
+            f.write(in_source)
 
-    with open(src_path, encoding="utf-8") as f:
-        source = f.read()
+        stdout_capture = io.StringIO()
+        with contextlib.redirect_stdout(stdout_capture):
+            translator.main(str(source), target)
 
-    input_text = ""
-    if os.path.exists(inp_path):
-        with open(inp_path, encoding="utf-8") as f:
-            input_text = f.read()
+            bin_path = target + ".bin"
+            lst_candidate = Path(target + ".lst")
+            lst_path: str | None = str(lst_candidate) if lst_candidate.exists() else None
 
-    expected = ""
-    if os.path.exists(exp_path):
-        with open(exp_path, encoding="utf-8") as f:
-            expected = f.read()
+            m = machine.Machine(bin_path, lst_path, in_stdin)
+            out = m.run(max_ticks=limit)
+            m.write_outputs(target)
+            print(out, end="")
 
-    # Assemble
-    bin_path = os.path.join(base, "program.bin")
-    lst_path = os.path.join(base, "program.lst")
-    write_binary(source, bin_path, lst_path)
+            log_lines = m.get_journal().split("\n")[:MAX_LOG]
+            for line in log_lines:
+                logging.info(line)
 
-    # Simulate
-    m = Machine(bin_path, lst_path, input_text)
-    actual = m.run(max_ticks=MAX_TICKS)
+        with open(target + ".cmem", "rb") as f:
+            cmem_data = f.read()
+        trimmed = cmem_data.rstrip(b"\x00")
+        out_code = trimmed.hex(" ").upper()
 
-    # Save journal
-    journal_path = os.path.join(base, "journal.log")
-    journal = m.get_journal()
-    with open(journal_path, "w", encoding="utf-8") as f:
-        f.write(journal)
-        f.write(f"\n\nTotal ticks: {m.tick_count}\n")
+        with open(target + ".hex", encoding="utf-8") as f:
+            out_code_hex = f.read()
 
-    if update:
-        with open(exp_path, "w", encoding="utf-8") as f:
-            f.write(actual)
-        return True, actual, actual, m.tick_count
+        with open(target + ".mem", "rb") as f:
+            mem_data = f.read()
+        trimmed_mem = mem_data.rstrip(b"\x00")
+        out_data = trimmed_mem.hex(" ").upper() if trimmed_mem else ""
 
-    passed = actual.rstrip() == expected.rstrip()
-    return passed, actual, expected, m.tick_count
+        with open(target + ".mem.hex", encoding="utf-8") as f:
+            out_data_hex = f.read()
 
+        log = "\n".join(log_lines).replace("\r", "") + "EOF"
 
-def main():
-    update = "--update" in sys.argv
-    args = [a for a in sys.argv[1:] if a != "--update"]
-    filter_name = args[0] if len(args) > 0 else None
-    cases = discover_cases(filter_name)
-
-    if not cases:
-        print("No golden test cases found.")
-        sys.exit(1)
-
-    total = len(cases)
-    passed_count = 0
-    failed = []
-
-    print(f"Running {total} golden test(s)...\n")
-
-    for name in cases:
-        try:
-            ok, actual, expected, ticks = run_case(name, update=update)
-        except Exception as e:
-            print(f"  FAIL  {name}: {e}")
-            failed.append(name)
-            continue
-
-        if ok:
-            print(f"  PASS  {name}  ({ticks} ticks)")
-            passed_count += 1
-        else:
-            print(f"  FAIL  {name}  ({ticks} ticks)")
-            print(f"        expected: {repr(expected.rstrip()[:80])}")
-            print(f"        actual:   {repr(actual.rstrip()[:80])}")
-            failed.append(name)
-
-    print(f"\n{passed_count}/{total} passed")
-    if failed:
-        print(f"Failed: {', '.join(failed)}")
-    sys.exit(0 if not failed else 1)
+        return {
+            "out_code": out_code,
+            "out_code_hex": out_code_hex,
+            "out_data": out_data,
+            "out_data_hex": out_data_hex,
+            "out_stdout": stdout_capture.getvalue().replace("\r", ""),
+            "out_log": log,
+        }
 
 
-if __name__ == "__main__":
-    main()
+@pytest.mark.parametrize(("yaml_path", "golden"), load_golden_cases())
+def test_translator_and_machine(yaml_path: Path, golden: dict[str, Any], caplog: pytest.LogCaptureFixture) -> None:
+    in_source = golden.get("in_source")
+    if in_source is None:
+        pytest.skip("empty golden file")
+
+    in_stdin = golden.get("in_stdin", "")
+    limit = golden.get("in_limit") or 6000
+
+    caplog.set_level(logging.DEBUG)
+    caplog.handler.setFormatter(logging.Formatter("%(message)s"))
+
+    actual = run_test_case(in_source, in_stdin, limit)
+
+    actual_norm = {k: _make_single_line(v) for k, v in actual.items()}
+    actual_norm["out_log"] = actual["out_log"].replace("\r", "")
+
+    if UPDATE_GOLDENS:
+        golden["out_code"] = actual_norm["out_code"]
+        golden["out_code_hex"] = actual_norm["out_code_hex"]
+        golden["out_data"] = actual_norm["out_data"]
+        golden["out_data_hex"] = actual_norm["out_data_hex"]
+        golden["out_stdout"] = actual_norm["out_stdout"]
+        golden["out_log"] = actual_norm["out_log"]
+
+        with open(yaml_path, "w", encoding="utf-8") as f:
+            yaml.dump(golden, f, allow_unicode=True, sort_keys=False, Dumper=SingleLineDumper)
+        return
+
+    assert actual_norm["out_code"] == golden["out_code"]
+    assert actual_norm["out_code_hex"] == golden["out_code_hex"]
+    assert actual_norm["out_data"] == golden["out_data"]
+    assert actual_norm["out_data_hex"] == golden["out_data_hex"]
+    assert actual_norm["out_stdout"] == golden["out_stdout"]
+    assert actual_norm["out_log"] == golden["out_log"]
