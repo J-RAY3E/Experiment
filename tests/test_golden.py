@@ -104,6 +104,7 @@ def test_translator_and_machine(yaml_path: Path, golden: dict[str, Any], caplog:
     if in_source is None:
         pytest.skip("empty golden file")
 
+    assert in_source is not None
     in_stdin: str = golden.get("in_stdin", "")
     limit: int = cast(int, golden.get("in_limit") or 6000)
 
