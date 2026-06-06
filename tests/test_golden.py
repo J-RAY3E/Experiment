@@ -6,8 +6,7 @@ import logging
 import os
 import tempfile
 from pathlib import Path
-from typing import Any
-from typing import cast
+from typing import Any, cast
 
 import pytest
 import yaml
