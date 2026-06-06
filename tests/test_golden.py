@@ -43,7 +43,7 @@ def load_golden_cases() -> list[tuple[Path, dict[str, Any]]]:
     return cases
 
 
-def run_test_case(in_source: str, in_stdin: str, limit: int) -> dict[str, Any]:
+def run_test_case(in_source: str, in_stdin: str, limit: int) -> dict[str, str]:
     with tempfile.TemporaryDirectory() as tmpdirname:
         tmpdir = Path(tmpdirname)
         source = tmpdir / "source.asm"
@@ -99,13 +99,13 @@ def run_test_case(in_source: str, in_stdin: str, limit: int) -> dict[str, Any]:
 
 @pytest.mark.parametrize(("yaml_path", "golden"), load_golden_cases())
 def test_translator_and_machine(yaml_path: Path, golden: dict[str, Any], caplog: pytest.LogCaptureFixture) -> None:
-    in_source = golden.get("in_source")
+    in_source: str | None = golden.get("in_source")
 
     if in_source is None:
         pytest.skip("empty golden file")
 
-    in_stdin = golden.get("in_stdin", "")
-    limit = cast(int, golden.get("in_limit") or 6000)
+    in_stdin: str = golden.get("in_stdin", "")
+    limit: int = cast(int, golden.get("in_limit") or 6000)
 
     caplog.set_level(logging.DEBUG)
     caplog.handler.setFormatter(logging.Formatter("%(message)s"))
