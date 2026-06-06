@@ -239,7 +239,7 @@ class DataPath:
                 vals = self.vregs.read(rd)
                 self.mem.store_word(mem_addr, vals[mi.lane_sel])
             else:
-                data = r2_data  # Already read from rs2
+                data = r2_data
                 if mi.mem_byte:
                     self.mem.store_byte(mem_addr, data)
                 else:

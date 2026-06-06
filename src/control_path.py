@@ -7,7 +7,6 @@ from typing import Any
 
 from src.isa import OPCODE_MASK, OPCODE_NAMES, OPCODE_SHIFT
 
-# ── Mux select constants ─────────────────────────────────────────────────────
 A_NONE: int = 0
 A_RS1: int = 1
 A_PC: int = 2
@@ -95,7 +94,6 @@ class MI:
             w |= 1 << 30
         w |= (self.br_type & 0x3) << 20
         w |= (self.addr & 0xFF) << 22
-        # Upper 32 bits (new vector signals)
         if self.v_reg_we:
             w |= 1 << 32
         if self.v_reg_src:
