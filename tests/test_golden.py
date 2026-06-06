@@ -6,7 +6,7 @@ import logging
 import os
 import tempfile
 from pathlib import Path
-from typing import Any
+from typing import Any,cast
 
 import pytest
 import yaml
@@ -100,11 +100,12 @@ def run_test_case(in_source: str, in_stdin: str, limit: int) -> dict[str, Any]:
 @pytest.mark.parametrize(("yaml_path", "golden"), load_golden_cases())
 def test_translator_and_machine(yaml_path: Path, golden: dict[str, Any], caplog: pytest.LogCaptureFixture) -> None:
     in_source = golden.get("in_source")
+
     if in_source is None:
         pytest.skip("empty golden file")
 
     in_stdin = golden.get("in_stdin", "")
-    limit = golden.get("in_limit") or 6000
+    limit = cast(int, golden.get("in_limit") or 6000)
 
     caplog.set_level(logging.DEBUG)
     caplog.handler.setFormatter(logging.Formatter("%(message)s"))
