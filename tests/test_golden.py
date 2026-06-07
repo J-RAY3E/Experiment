@@ -99,7 +99,7 @@ def run_test_case(in_source: str, in_stdin: str, limit: int) -> dict[str, str]:
 
 @pytest.mark.parametrize(("yaml_path", "golden"), load_golden_cases())
 def test_translator_and_machine(yaml_path: Path, golden: dict[str, Any], caplog: pytest.LogCaptureFixture) -> None:
-    in_source: str | None = golden.get("in_source")
+    in_source: str | None = cast(str | None, golden.get("in_source"))
 
     if in_source is None:
         pytest.skip("empty golden file")

@@ -31,7 +31,7 @@ PREC = [{"||"}, {"&&"}, {"|"}, {"^"}, {"&"}, {"==", "!="}, {"<", ">", "<=", ">="
 BM = {"+": "ADD", "-": "SUB", "*": "MUL", "/": "DIV", "%": "REM", "&": "AND", "|": "OR", "^": "XOR", "<<": "SLL", ">>": "SRL"}
 VBM = {"+": "VADD", "-": "VSUB", "*": "VMUL", "/": "VDIV"}
 KW = {"function", "let", "if", "else", "while", "halt", "true", "false", "return"}
-BI = {"print", "print_str", "read", "readln", "vload", "vadd", "vstore", "len"}
+BI = {"print", "print_str", "print_num", "read", "readln", "vload", "vadd", "vstore", "len"}
 TREGS = ["t0", "t1", "t2", "t3", "t4", "t5", "t6"]
 VREGS = ["s0", "s1", "s2", "s3", "s4", "s5", "s6", "s7", "s8", "s9", "s10", "s11"]
 I11 = -1024, 1023
@@ -209,7 +209,7 @@ class HL:
         tg = VarRef(n)
         while self.peek()[1] == "[":
             self.adv()
-            tg = IndexExpr(tg, self.pexpr())  # type: ignore[assignment]
+            tg = IndexExpr(tg, self.pexpr())
             self.exp("]")
         self.exp("=")
         v = self.pexpr()
@@ -257,7 +257,7 @@ class HL:
                 n2 = VarRef(t[1])
                 while self.peek()[1] == "[":
                     self.adv()
-                    n2 = IndexExpr(n2, self.pexpr())  # type: ignore[assignment]
+                    n2 = IndexExpr(n2, self.pexpr())
                     self.exp("]")
                 return n2
             raise SyntaxError(f"unexpected builtin {t} at {self.pos}")
@@ -336,8 +336,8 @@ class HL:
 
     def als(self, c):
         o = self.do
+        self.strs.append((o, c))
         self.do += 1 + len(c)
-        self.strs.append(c)
         return o
 
     def _gfunc(self, f):
@@ -394,6 +394,15 @@ class HL:
                         ar = self.ar()
                         self.em(f"ADDI {ar}, gp, {o + i}")
                         self.em(f"SW {vr}, {ar}, 0")
+            elif iv is not None:
+                r = self.ge(iv)
+                if isinstance(r, tuple) and r and r[0] == "arr":
+                    ro, rn = r[1], r[2]
+                    for i in range(min(rn, sz)):
+                        ar = self.ar()
+                        self.em(f"ADDI {ar}, gp, {ro + i}")
+                        self.em(f"LW {ar}, {ar}, 0")
+                        self.em(f"SW {ar}, gp, {o + i}")
             self.arrays[n] = (o, sz)
             self.vars[n] = ("arr", o, sz)
             return
@@ -451,21 +460,50 @@ class HL:
                 ba = self.ar()
                 le = self.ar()
                 i2 = self.ar()
+                ch = self.ar()
                 po = self.li(OUT_PORT)
                 ls = self.ml("ps")
                 le2 = self.ml("pe")
                 self.em(f"ADDI {ba}, gp, {so}")
                 self.em(f"LW {le}, {ba}, 0")
+                self.em(f"ADDI {ba}, {ba}, 1")
                 self.em(f"ADDI {i2}, zero, 0")
                 self.em(f"{ls}:")
                 self.em(f"BGE {i2}, {le}, {le2}")
-                self.em(f"LW {po}, {ba}, 1")
-                self.em(f"ADD {po}, {po}, {i2}")
-                self.em(f"LW {po}, {po}, 0")
-                self.em(f"SW {po}, {po}, 0")
+                self.em(f"ADD {ch}, {ba}, {i2}")
+                self.em(f"LW {ch}, {ch}, 0")
+                self.em(f"SW {ch}, {po}, 0")
                 self.em(f"ADDI {i2}, {i2}, 1")
                 self.em(f"J {ls}")
                 self.em(f"{le2}:")
+                return
+        if isinstance(x, CallExpr) and x.name == "print_num":
+            if x.args:
+                val_orig = self.er(self.ge(x.args[0]))
+                val = self.ar()
+                self.em(f"MV {val}, {val_orig}")
+                div = self.ar()
+                tmp = self.ar()
+                ten = self.ar()
+                po = self.li(OUT_PORT)
+                ls = self.ml("pnl")
+                l2 = self.ml("pn2")
+                l3 = self.ml("pn3")
+                self.em(f"ADDI {ten}, zero, 10")
+                self.em(f"ADDI {div}, zero, 1")
+                self.em(f"{ls}:")
+                self.em(f"DIV {tmp}, {val}, {div}")
+                self.em(f"BLT {tmp}, {ten}, {l2}")
+                self.em(f"MUL {div}, {div}, {ten}")
+                self.em(f"J {ls}")
+                self.em(f"{l2}:")
+                self.em(f"{l3}:")
+                self.em(f"DIV {tmp}, {val}, {div}")
+                self.em(f"REM {val}, {val}, {div}")
+                self.em(f"ADDI {tmp}, {tmp}, 48")
+                self.em(f"SW {tmp}, {po}, 0")
+                self.em(f"DIV {div}, {div}, {ten}")
+                self.em(f"BNE {div}, zero, {l3}")
                 return
         if isinstance(x, CallExpr) and x.name == "print":
             po = self.li(OUT_PORT)
@@ -477,9 +515,19 @@ class HL:
             return
         if isinstance(x, CallExpr) and x.name == "vstore":
             o = self.ge(x.args[0])
-            vv = self.ge(x.args[1])
-            if isinstance(o, int) and isinstance(vv, tuple):
-                self.em(f"VST {vv[1]}, [gp+{o}]")
+            idx = self.ge(x.args[1]) if len(x.args) > 2 else None
+            vv = self.ge(x.args[2] if len(x.args) > 2 else x.args[1])
+            ar = self.ar()
+            if isinstance(o, tuple) and o[0] == "arr":
+                self.em(f"ADDI {ar}, gp, {o[1]}")
+            elif isinstance(o, int):
+                self.em(f"ADDI {ar}, gp, {o}")
+            else:
+                self.em(f"ADD {ar}, gp, {self.er(o)}")
+            if idx is not None:
+                self.em(f"ADD {ar}, {ar}, {self.er(idx)}")
+            if isinstance(vv, tuple) and vv[0] == "v":
+                self.em(f"VST {vv[1]}, [{ar}+0]")
             return
         if isinstance(x, CallExpr):
             for i, a in enumerate(x.args):
@@ -488,12 +536,15 @@ class HL:
             self.em(f"JAL {x.name}")
 
     def _gc(self, k, cond, body, eb):
+        lc = self.ml("wc") if k == "while" else None
         le = self.ml("el") if k == "if" else None
         le2 = self.ml("en")
+        if k == "while":
+            self.em(f"{lc}:")
         cv = self.ge(cond)
-        if isinstance(cv, tuple):
+        bm = {"==": "BNE", "!=": "BEQ", "<": "BGE", ">=": "BLT", ">": "BLE", "<=": "BGT"}
+        if isinstance(cv, tuple) and len(cv) == 3 and cv[0] in bm:
             op, rs1, rs2 = cv
-            bm = {"==": "BNE", "!=": "BEQ", "<": "BGE", ">=": "BLT", ">": "BLE", "<=": "BGT"}
             tg = le if k == "if" else le2
             self.em(f"{bm[op]} {rs1}, {rs2}, {tg}")
         else:
@@ -510,8 +561,9 @@ class HL:
                 self.em(f"{le}:")
             self.em(f"{le2}:")
         else:
-            self.em(f"J {cv}")
+            self.em(f"J {lc}")
             self.em(f"{le2}:")
+
 
     def ge(self, e, target_reg=None):
         if isinstance(e, (IntLiteral, BoolLiteral, CharLiteral)):
@@ -556,11 +608,19 @@ class HL:
             return 0
         if isinstance(e, CallExpr) and e.name == "vload":
             o = self.ge(e.args[0])
-            if isinstance(o, int):
-                vr = self.av()
-                self.em(f"VLD {vr}, [gp+{o}]")
-                return ("v", vr)
-            return 0
+            idx = self.ge(e.args[1]) if len(e.args) > 1 else None
+            vr = self.av()
+            ar = self.ar()
+            if isinstance(o, tuple) and o[0] == "arr":
+                self.em(f"ADDI {ar}, gp, {o[1]}")
+            elif isinstance(o, int):
+                self.em(f"ADDI {ar}, gp, {o}")
+            else:
+                self.em(f"ADD {ar}, gp, {self.er(o)}")
+            if idx is not None:
+                self.em(f"ADD {ar}, {ar}, {self.er(idx)}")
+            self.em(f"VLD {vr}, [{ar}+0]")
+            return ("v", vr)
         if isinstance(e, CallExpr) and e.name == "vadd":
             v1 = self.ge(e.args[0])
             v2 = self.ge(e.args[1])
@@ -621,15 +681,46 @@ class HL:
             lo, ln = left[1], left[2]
             ro, _rn = right[1], right[2]
             ro2 = self.do
+            orig = ro2
             self.do += ln
+            nf = ln // 4
+            tl = ln % 4
             vl = self.av()
             vr = self.av()
             vd = self.av()
-            self.em(f"VLD {vl}, [gp+{lo}]")
-            self.em(f"VLD {vr}, [gp+{ro}]")
-            self.em(f"{VBM[op]} {vd}, {vl}, {vr}")
-            self.em(f"VST {vd}, [gp+{ro2}]")
-            return ("arr", ro2, ln)
+            rlo = self.ar()
+            rro = self.ar()
+            rro2 = self.ar()
+            self.em(f"ADDI {rlo}, gp, {lo}")
+            self.em(f"ADDI {rro}, gp, {ro}")
+            self.em(f"ADDI {rro2}, gp, {ro2}")
+            if nf > 0:
+                ci = self.ar()
+                lh = self.ml("vh")
+                self.em(f"ADDI {ci}, zero, {nf}")
+                self.em(f"{lh}:")
+                self.em(f"VLD {vl}, [{rlo}+0]")
+                self.em(f"VLD {vr}, [{rro}+0]")
+                self.em(f"{VBM[op]} {vd}, {vl}, {vr}")
+                self.em(f"VST {vd}, [{rro2}+0]")
+                self.em(f"ADDI {rlo}, {rlo}, 4")
+                self.em(f"ADDI {rro}, {rro}, 4")
+                self.em(f"ADDI {rro2}, {rro2}, 4")
+                self.em(f"ADDI {ci}, {ci}, -1")
+                self.em(f"BNE {ci}, zero, {lh}")
+            if tl > 0:
+                sl = self.ar()
+                sr = self.ar()
+                sd = self.ar()
+                for _ in range(tl):
+                    self.em(f"LW {sl}, {rlo}, 0")
+                    self.em(f"LW {sr}, {rro}, 0")
+                    self.em(f"{BM[op]} {sd}, {sl}, {sr}")
+                    self.em(f"SW {sd}, {rro2}, 0")
+                    self.em(f"ADDI {rlo}, {rlo}, 1")
+                    self.em(f"ADDI {rro}, {rro}, 1")
+                    self.em(f"ADDI {rro2}, {rro2}, 1")
+            return ("arr", orig, ln)
         if isinstance(left, int) and isinstance(right, int):
             ops = {
                 "+": left + right,
@@ -671,8 +762,6 @@ class HL:
         return res
 
     def _fin(self):
-        db = 0x100
-        lns = ["    .org 0", "    J main", f"    .org {db}", "data_start:"]
         its = []
         for n, loc in self.vars.items():
             if isinstance(loc, int):
@@ -681,20 +770,31 @@ class HL:
                 off, sz = loc[1], loc[2]
                 for i in range(sz):
                     its.append((off + i, f"    .word {self.dv.get(off + i, 0)}  ; {n}[{i}]"))
-        its.sort(key=lambda x: x[0])
-        cur = 0
-        for ao, line in its:
-            if ao > cur:
-                lns.append(f"    .org {db + ao}")
-                cur = db + ao
-            lns.append(line)
-            cur += 1
         esc = {"\n": "\\n", "\t": "\\t", "\r": "\\r", '"': '\\"', "\\": "\\\\"}
-        for c in self.strs:
-            lns.append(f'    .string "{"".join(esc.get(ch, ch) for ch in c)}"')
-        if not its and not self.strs:
+        for o, c in self.strs:
+            its.append((o, f'    .string "{"".join(esc.get(ch, ch) for ch in c)}"'))
+        its.sort(key=lambda x: x[0])
+        lns = ["    .org 0", "    J main", "    .org 1", "data_start:"]
+        cur = 1
+        for ao, line in its:
+            addr = 1 + ao
+            if addr > cur:
+                lns.append(f"    .org {addr}")
+                cur = addr
+            lns.append(line)
+            if ".string" in line:
+                m = re.search(r'\.string "(.*)"', line)
+                if m:
+                    s_raw = m.group(1)
+                    s_len = len(s_raw.replace("\\n", "\n").replace("\\t", "\t").replace("\\r", "\r").replace('\\"', '"').replace("\\\\", "\\"))
+                    cur += 1 + s_len
+            else:
+                cur += 1
+        code_base = 1 + self.do
+        if not its:
             lns.append("    .word 0  ; dummy")
-        lns.append("    .org 1")
+            code_base = 2
+        lns.append(f"    .org {code_base}")
         for ln in self.asm:
             lns.append(ln)
             if ln.strip() == "main:":

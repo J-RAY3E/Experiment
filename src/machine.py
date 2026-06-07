@@ -13,7 +13,7 @@ def load_binary(bin_path: str, lst_path: str | None = None) -> tuple[list[int], 
     """Load a binary file into instruction and data word lists.
 
     Returns:
-        instr_words: instruction memory (list indexed by PC)
+        instr_words: instruction memory (list indexed by binary address)
         data_map:    data memory map {logical_address: word_value}
         data_base:   base address of data section (for gp register)
     """
@@ -28,24 +28,29 @@ def load_binary(bin_path: str, lst_path: str | None = None) -> tuple[list[int], 
     if lst_path and Path(lst_path).exists():
         with open(lst_path, encoding="utf-8") as f:
             content = f.read()
-        addr_word_pairs = re.findall(r"^([0-9A-Fa-f]+)\s+-\s+([0-9A-Fa-f]+)\s+-", content, re.M)
-        if addr_word_pairs:
-            word_addrs = [int(a, 16) for a, _w in addr_word_pairs]
-            sorted_addrs = sorted(set(word_addrs))
-            split = len(sorted_addrs)
-            for i, a in enumerate(sorted_addrs):
-                if a != i:
-                    split = i
-                    data_base = a
-                    break
-            instr_by_addr: dict[int, int] = {}
-            for (a_str, w_str), logical_addr in zip(addr_word_pairs, word_addrs):
-                if logical_addr < split and logical_addr not in instr_by_addr:
-                    instr_by_addr[logical_addr] = int(w_str, 16)
-            instr_words = [instr_by_addr.get(i, 0) for i in range(split)]
-            for logical_addr, (a_str, w_str) in zip(word_addrs, addr_word_pairs):
-                if logical_addr >= split:
-                    data_map[logical_addr] = int(w_str, 16)
+        lines = content.strip().split("\n")
+        all_addrs: list[int] = []
+        instr_by_addr: dict[int, int] = {}
+        data_by_addr: dict[int, int] = {}
+        for line in lines:
+            m = re.match(r"^([0-9A-Fa-f]+)\s+-\s+([0-9A-Fa-f]+)\s+-\s+(.+)$", line)
+            if not m:
+                continue
+            addr = int(m.group(1), 16)
+            word = int(m.group(2), 16)
+            rest = m.group(3).strip()
+            all_addrs.append(addr)
+            if rest.startswith(".WORD") or rest.startswith(".STRING_LEN") or rest.startswith(".CHAR"):
+                data_by_addr[addr] = word
+            else:
+                instr_by_addr[addr] = word
+        if instr_by_addr:
+            first_instr = min(instr_by_addr)
+            data_base = 0
+            max_addr = max(all_addrs)
+            instr_words = [instr_by_addr.get(i, 0) for i in range(max_addr + 1)]
+            for a, w in data_by_addr.items():
+                data_map[a] = w
 
     if not instr_words:
         instr_words = list(words)

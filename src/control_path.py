@@ -27,35 +27,35 @@ REG_IMM_U21: int = 6
 
 @dataclass
 class MI:
-    ir_we: bool = False  # load IR from instr_mem[PC]
-    pc_inc: bool = False  # PC ← PC + 1
-    pc_src: bool = False  # MUX_PC: 0=PC+1, 1=load from feedback_bus
+    ir_we: bool = False
+    pc_inc: bool = False
+    pc_src: bool = False
 
-    a_sel: int = A_NONE  # MUX_ALU_SRC1 select
-    b_sel: int = B_NONE  # MUX_ALU_SRC2 select
-    alu_op: str = ""  # ALU operation
-    alu_exec: bool = False  # enable ALU computation
+    a_sel: int = A_NONE
+    b_sel: int = B_NONE
+    alu_op: str = ""
+    alu_exec: bool = False
 
-    mar_we: bool = False  # load MAR from ALU_OUT
-    mem_rd: bool = False  # memory read enable
-    mem_wr: bool = False  # memory write enable
-    mem_byte: bool = False  # byte access mode
-    check_out: bool = False  # address may be OUT_PORT
+    mar_we: bool = False
+    mem_rd: bool = False
+    mem_wr: bool = False
+    mem_byte: bool = False
+    check_out: bool = False
 
-    reg_we: bool = False  # register file write enable
-    reg_src: int = REG_NONE  # MUX_WB select (feedback bus source)
+    reg_we: bool = False
+    reg_src: int = REG_NONE
 
-    valu_exec: bool = False  # enable vector ALU execution
-    mem_data_src: int = 0  # MUX store data: 0=scalar(r2), 1=vector(VRF)
-    v_reg_we: bool = False  # write enable for VRF
-    v_reg_src: int = 0  # MUX VRF input: 0=ALU_V_Out, 1=MDR
-    lane_sel: int = 0  # lane selector 0..3 for per-lane VRF writes
+    valu_exec: bool = False
+    mem_data_src: int = 0
+    v_reg_we: bool = False
+    v_reg_src: int = 0
+    lane_sel: int = 0
 
-    vbase_we: bool = False  # write enable for Vbase register
-    addr_sel: bool = False  # MUX address: 0=MAR, 1=Vbase
-    vbase_sel: bool = False  # MUX Vbase input: 0=MAR, 1=Vbase+1
+    vbase_we: bool = False
+    addr_sel: bool = False
+    vbase_sel: bool = False
 
-    halt: bool = False  # halt the machine
+    halt: bool = False
 
     @property
     def mir_word(self) -> int:
@@ -180,61 +180,33 @@ _ALU_OPS: dict[str, str] = {
 }
 
 _UROM: list[MI] = [
-    # 0: FETCH
     MI(ir_we=True, pc_inc=True, br_type=2),
-    # 1: R_EX -> ALU(r1, r2) -> RF(rd)
     MI(a_sel=A_RS1, b_sel=B_RS2, alu_exec=True, reg_we=True, reg_src=REG_ALU, br_type=3),
-    # 2: I_EX -> ALU(r1, imm) -> RF(rd)
     MI(a_sel=A_RS1, b_sel=B_IMM, alu_exec=True, reg_we=True, reg_src=REG_ALU, br_type=3),
-    # 3: L_EX1 -> addr = r1 + imm; MAR = ALU_OUT
     MI(a_sel=A_RS1, b_sel=B_IMM, alu_exec=True, mar_we=True, br_type=0),
-    # 4: L_EX2 -> MDR = MEM[MAR]
     MI(mem_rd=True, br_type=1, addr=17),
-    # 5: S_EX1 -> addr = r1 + imm; MAR = ALU_OUT
     MI(a_sel=A_RS1, b_sel=B_IMM, alu_exec=True, mar_we=True, br_type=1, addr=18),
-    # 6: B_EX -> ALU_OUT = PC + imm; feedback_bus = ALU_OUT; PC = feedback_bus (if cond)
     MI(a_sel=A_PC, b_sel=B_IMM, alu_exec=True, reg_src=REG_ALU, pc_src=True, br_type=3),
-    # 7: J_EX -> feedback_bus = imm_u26; PC = feedback_bus
     MI(reg_src=REG_IMM_U26, pc_src=True, br_type=3),
-    # 8: JL_EX1 -> Link: RF[rd] = PC (already PC+1); Step to Jump
     MI(reg_we=True, reg_src=REG_PC, br_type=1, addr=24),
-    # 9: JR_EX -> ALU(r1, imm) -> feedback_bus; PC = feedback_bus
     MI(a_sel=A_RS1, b_sel=B_IMM, alu_exec=True, reg_src=REG_ALU, pc_src=True, br_type=3),
-    # 10: U_EX -> RF[rd] = imm << 11
     MI(reg_we=True, reg_src=REG_IMM_SHL11, br_type=3),
-    # 11: NOP_EX
     MI(br_type=3),
-    # 12: HALT_EX
     MI(halt=True),
-    # 13: V_EX — vector ALU: lanes compute, result → VRF
     MI(valu_exec=True, v_reg_we=True, a_sel=A_RS1, b_sel=B_RS2, alu_exec=True, br_type=3),
-    # 14: VLD_EX — addr = rs1 + imm → MAR, vbase = MAR, jump to VLD_W0 (25)
     MI(a_sel=A_RS1, b_sel=B_IMM, alu_exec=True, mar_we=True, vbase_we=True, vbase_sel=False, br_type=1, addr=25),
-    # 15: (reserved)
     MI(br_type=3),
-    # 16: VST_EX1 — address = rs1 + imm → MAR, vbase = MAR
     MI(a_sel=A_RS1, b_sel=B_IMM, alu_exec=True, mar_we=True, vbase_we=True, vbase_sel=False, br_type=1, addr=20),
-    # 17: L_EX3 -> RF[rd] = MDR
     MI(reg_we=True, reg_src=REG_MEM, br_type=3),
-    # 18: S_EX2 -> MEM[MAR] = r2
     MI(mem_wr=True, check_out=True, br_type=3),
-    # 19: VLD_W3 — MDR = MEM[vbase], VRF[rd][3] = MDR (last lane)
     MI(mem_rd=True, addr_sel=True, v_reg_we=True, v_reg_src=1, lane_sel=3, br_type=3),
-    # 20: VST_W0 — MEM[vbase] = VRF[rd][0], vbase++
     MI(mem_wr=True, mem_data_src=1, lane_sel=0, addr_sel=True, vbase_we=True, vbase_sel=True, br_type=1, addr=21),
-    # 21: VST_W1 — MEM[vbase] = VRF[rd][1], vbase++
     MI(mem_wr=True, mem_data_src=1, lane_sel=1, addr_sel=True, vbase_we=True, vbase_sel=True, br_type=1, addr=22),
-    # 22: VST_W2 — MEM[vbase] = VRF[rd][2], vbase++
     MI(mem_wr=True, mem_data_src=1, lane_sel=2, addr_sel=True, vbase_we=True, vbase_sel=True, br_type=1, addr=23),
-    # 23: VST_W3 — MEM[vbase] = VRF[rd][3]
     MI(mem_wr=True, mem_data_src=1, lane_sel=3, addr_sel=True, br_type=3),
-    # 24: JL_EX2 -> feedback_bus = imm_u21; PC = feedback_bus
     MI(reg_src=REG_IMM_U21, pc_src=True, br_type=3),
-    # 25: VLD_W0 — MDR = MEM[vbase], VRF[rd][0] = MDR, vbase++
     MI(mem_rd=True, addr_sel=True, v_reg_we=True, v_reg_src=1, lane_sel=0, vbase_we=True, vbase_sel=True, br_type=1, addr=26),
-    # 26: VLD_W1 — MDR = MEM[vbase], VRF[rd][1] = MDR, vbase++
     MI(mem_rd=True, addr_sel=True, v_reg_we=True, v_reg_src=1, lane_sel=1, vbase_we=True, vbase_sel=True, br_type=1, addr=27),
-    # 27: VLD_W2 — MDR = MEM[vbase], VRF[rd][2] = MDR, vbase++
     MI(mem_rd=True, addr_sel=True, v_reg_we=True, v_reg_src=1, lane_sel=2, vbase_we=True, vbase_sel=True, br_type=1, addr=19),
 ]
 
