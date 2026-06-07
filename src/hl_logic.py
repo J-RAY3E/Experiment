@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import re
+from typing import Any
 
 from src.ast_nodes import (
     ArrayLiteral,
@@ -206,7 +207,7 @@ class HL:
             a = self.args()
             self.exp(";")
             return ExprStmt(CallExpr(n, a))
-        tg = VarRef(n)
+        tg: Any = VarRef(n)
         while self.peek()[1] == "[":
             self.adv()
             tg = IndexExpr(tg, self.pexpr())
@@ -254,7 +255,7 @@ class HL:
                 a = self.args()
                 return CallExpr(f, a)
             if t[0] == "I":
-                n2 = VarRef(t[1])
+                n2: Any = VarRef(t[1])
                 while self.peek()[1] == "[":
                     self.adv()
                     n2 = IndexExpr(n2, self.pexpr())
