@@ -45,7 +45,6 @@ def load_binary(bin_path: str, lst_path: str | None = None) -> tuple[list[int], 
             else:
                 instr_by_addr[addr] = word
         if instr_by_addr:
-            first_instr = min(instr_by_addr)
             data_base = 0
             max_addr = max(all_addrs)
             instr_words = [instr_by_addr.get(i, 0) for i in range(max_addr + 1)]
