@@ -33,12 +33,17 @@ class Program(ASTNode):
 
 
 class FunctionDef(ASTNode):
-    def __init__(self, name: str, body: list[ASTNode]) -> None:
+    def __init__(self, name: str, body: list[ASTNode], params: list[str] | None = None) -> None:
         self.name = name
+        self.params = params or []
         self.body = body
 
     def to_dict(self) -> dict[str, Any]:
-        return {"function": self.name, "body": [s.to_dict() for s in self.body]}
+        d: dict[str, Any] = {"function": self.name}
+        if self.params:
+            d["params"] = self.params
+        d["body"] = [s.to_dict() for s in self.body]
+        return d
 
 
 class LetStmt(ASTNode):

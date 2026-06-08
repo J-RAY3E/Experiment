@@ -77,8 +77,8 @@ def test_main_roundtrip() -> None:
         tmpdir = Path(tmp)
         src_path = tmpdir / "test.asm"
         src_path.write_text(src, encoding="utf-8")
-        n_words = main(str(src_path), str(tmpdir / "out"))
-        assert n_words == 2
+        n_bytes = main(str(src_path), str(tmpdir / "out"))
+        assert n_bytes == 8
         bin_path = tmpdir / "out.bin"
         assert bin_path.exists()
         data = bin_path.read_bytes()

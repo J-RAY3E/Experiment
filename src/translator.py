@@ -7,6 +7,8 @@ from src.isa import (
     HALT_WORD,
     I_FORMAT,
     IMM11_MASK,
+    IMM12_MASK,
+    IMM20_MASK,
     IMM21_MASK,
     IMM26_MASK,
     L_FORMAT,
@@ -23,8 +25,8 @@ from src.isa import (
 )
 
 PSEUDO_SET = {"LI", "MV", "JMP", "BEQZ", "BNEZ", "BGTZ", "BLTZ"}
-IMM11_MIN, IMM11_MAX = -1024, 1023
-IMM21_MAX = 0x1FFFFF
+IMM12_MIN, IMM12_MAX = -2048, 2047
+IMM20_MAX = 0xFFFFF
 BRANCH_MIN, BRANCH_MAX = -1024, 1023
 
 
@@ -53,14 +55,14 @@ def expand(ops, mnem):
     lines: list[dict[str, Any]] = []
     if mnem == "LI":
         v = imm(ops[1])
-        if IMM11_MIN <= v <= IMM11_MAX:
+        if IMM12_MIN <= v <= IMM12_MAX:
             lines.append({"lb": None, "m": "ADDI", "ops": [ops[0], "zero", str(v)]})
-        elif 0 <= v <= IMM21_MAX:
+        elif 0 <= v <= IMM20_MAX:
             lines.append({"lb": None, "m": "LUI", "ops": [ops[0], str(v)]})
         else:
-            upper, lower = (v >> 11) & IMM21_MASK, v & IMM11_MASK
-            if lower > IMM11_MAX:
-                lower -= IMM11_MASK + 1
+            upper, lower = (v >> 12) & IMM20_MASK, v & IMM12_MASK
+            if lower > IMM12_MAX:
+                lower -= IMM12_MASK + 1
                 upper += 1
             lines.append({"lb": None, "m": "LUI", "ops": [ops[0], str(upper)]})
             lines.append({"lb": None, "m": "ADDI", "ops": [ops[0], ops[0], str(lower)]})
@@ -92,7 +94,7 @@ def _encode_i_format(op, ops, labels):
         val = int(ops[2], 0)
     except ValueError:
         val = labels.get(ops[2], 0)
-    return (op << OPCODE_SHIFT) | (rnum(ops[0]) << RD_SHIFT) | (rnum(ops[1]) << RS1_SHIFT) | (val & IMM11_MASK)
+    return (op << OPCODE_SHIFT) | (rnum(ops[0]) << RD_SHIFT) | (rnum(ops[1]) << RS1_SHIFT) | (val & IMM12_MASK)
 
 
 def _encode_s_format(op, ops, labels):
@@ -107,7 +109,7 @@ def _encode_b_format(op, ops, labels, addr):
     target = labels.get(ops[2])
     if target is None:
         raise ValueError(f"unknown label: {ops[2]}")
-    off = target - addr - 1
+    off = target - addr - 4
     if off < BRANCH_MIN or off > BRANCH_MAX:
         raise ValueError(f"branch offset {off} out of range")
     return (op << OPCODE_SHIFT) | (rnum(ops[0]) << RS1_SHIFT) | (rnum(ops[1]) << RS2_SHIFT) | (off & IMM11_MASK)
@@ -124,7 +126,7 @@ def encode(mnem, ops, labels, addr):
     if mnem in B_FORMAT:
         return _encode_b_format(op, ops, labels, addr)
     if mnem == "LUI":
-        return (op << OPCODE_SHIFT) | (rnum(ops[0]) << RD_SHIFT) | (imm(ops[1]) & IMM21_MASK)
+        return (op << OPCODE_SHIFT) | (rnum(ops[0]) << RD_SHIFT) | (imm(ops[1]) & IMM20_MASK)
     if mnem == "J":
         return (op << OPCODE_SHIFT) | (labels.get(ops[0], 0) & IMM26_MASK)
     if mnem == "JAL":
@@ -140,7 +142,7 @@ def encode(mnem, ops, labels, addr):
                 (op << OPCODE_SHIFT)
                 | (vnum(ops[0]) << RD_SHIFT)
                 | (rnum(m2.group(1)) << RS1_SHIFT)
-                | (imm(m2.group(2)) & IMM11_MASK)
+                | (imm(m2.group(2)) & IMM12_MASK)
             )
         return 0
     if mnem == "HALT":
@@ -167,15 +169,15 @@ def _resolve_labels(lines):
         if mnem == ".ORG":
             addr = imm(ln["ops"][0])
         elif mnem == ".WORD":
-            addr += len(ln["ops"])
+            addr += len(ln["ops"]) * 4
         elif mnem == ".STRING":
             raw = ln["ops"][0]
             s = raw[1:-1] if raw.startswith('"') else raw
             s = s.replace("\\n", "\n").replace("\\t", "\t").replace("\\r", "\r")
             s = s.replace('\\"', '"').replace("\\\\", "\\")
-            addr += 1 + len(s)
+            addr += 4 + len(s)
         elif mnem:
-            addr += 1
+            addr += 4
     return labels
 
 
@@ -194,22 +196,22 @@ def _generate_code(lines, labels):
                 w = imm(o) & WORD_MASK
                 data += struct.pack("<I", w)
                 lst.append(f"{addr:04X} - {w:08X} - .WORD {o}")
-                addr += 1
+                addr += 4
         elif mnem == ".STRING":
             s = ops[0][1:-1].replace("\\n", "\n").replace("\\t", "\t").replace("\\r", "\r")
             data += struct.pack("<I", len(s))
             lst.append(f"{addr:04X} - {len(s):08X} - .STRING_LEN {len(s)}")
-            addr += 1
+            addr += 4
             for c in s:
                 val = ord(c)
-                data += struct.pack("<I", val)
-                lst.append(f"{addr:04X} - {val:08X} - .CHAR {c!r}")
+                data += struct.pack("B", val)
+                lst.append(f"{addr:04X} - {val:02X} - .CHAR {c!r}")
                 addr += 1
         else:
             w = encode(mnem, ops, labels, addr)
             data += struct.pack("<I", w)
             lst.append(f"{addr:04X} - {w:08X} - {mnem} {' '.join(ops)}")
-            addr += 1
+            addr += 4
     return data, lst
 
 
@@ -248,7 +250,7 @@ def write_binary(src: str, bin_path: str, lst_path: str) -> int:
         f.write(data)
     with open(lst_path, "w", encoding="utf-8") as f:
         f.write("\n".join(lst))
-    return len(data) // 4
+    return len(data)
 
 
 def main(source_path: str, target_prefix: str) -> int:

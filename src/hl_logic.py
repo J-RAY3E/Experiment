@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import re
+from typing import Any
 
 from src.ast_nodes import (
     ArrayLiteral,
@@ -25,7 +26,7 @@ from src.ast_nodes import (
     VarRef,
     WhileStmt,
 )
-from src.isa import IMM21_MASK, IN_PORT, OUT_PORT
+from src.isa import IMM20_MASK, IN_PORT, OUT_PORT
 
 PREC = [{"||"}, {"&&"}, {"|"}, {"^"}, {"&"}, {"==", "!="}, {"<", ">", "<=", ">="}, {"<<", ">>"}, {"+", "-"}, {"*", "/", "%"}]
 BM = {"+": "ADD", "-": "SUB", "*": "MUL", "/": "DIV", "%": "REM", "&": "AND", "|": "OR", "^": "XOR", "<<": "SLL", ">>": "SRL"}
@@ -34,7 +35,7 @@ KW = {"function", "let", "if", "else", "while", "halt", "true", "false", "return
 BI = {"print", "print_str", "print_num", "read", "readln", "vload", "vadd", "vstore", "len"}
 TREGS = ["t0", "t1", "t2", "t3", "t4", "t5", "t6"]
 VREGS = ["s0", "s1", "s2", "s3", "s4", "s5", "s6", "s7", "s8", "s9", "s10", "s11"]
-I11 = -1024, 1023
+I12 = -2048, 2047
 
 
 class HL:
@@ -115,6 +116,19 @@ class HL:
         self.exp(")")
         return a
 
+    def def_params(self):
+        self.exp("(")
+        params = []
+        while self.peek()[1] != ")":
+            t = self.peek()
+            if t[0] != "I":
+                raise SyntaxError(f"expected identifier in function params, got {t}")
+            params.append(self.adv()[1])
+            if self.peek()[1] == ",":
+                self.adv()
+        self.exp(")")
+        return params
+
     def parse(self, s):
         self.tokenize(s)
         fs = []
@@ -122,11 +136,11 @@ class HL:
             if self.peek() == ("K", "function"):
                 self.adv()
                 n = self.adv()[1]
-                self.args()
+                params = self.def_params()
                 self.exp("{")
                 b = self._stmts("}")
                 self.exp("}")
-                fs.append(FunctionDef(n, b))
+                fs.append(FunctionDef(n, b, params))
             else:
                 self.adv()
         self.ast = Program(fs)
@@ -206,7 +220,7 @@ class HL:
             a = self.args()
             self.exp(";")
             return ExprStmt(CallExpr(n, a))
-        tg = VarRef(n)
+        tg: Any = VarRef(n)
         while self.peek()[1] == "[":
             self.adv()
             tg = IndexExpr(tg, self.pexpr())
@@ -254,7 +268,7 @@ class HL:
                 a = self.args()
                 return CallExpr(f, a)
             if t[0] == "I":
-                n2 = VarRef(t[1])
+                n2: Any = VarRef(t[1])
                 while self.peek()[1] == "[":
                     self.adv()
                     n2 = IndexExpr(n2, self.pexpr())
@@ -305,7 +319,7 @@ class HL:
         if n not in self.vars:
             self.vars[n] = VREGS[len(self.vars)] if len(self.vars) < 12 else self.do
             if isinstance(self.vars[n], int):
-                self.do += 1
+                self.do += 4
         return self.vars[n]
 
     def lv(self, n):
@@ -322,14 +336,14 @@ class HL:
 
     def li(self, v, r=None):
         rr = r or self.ar()
-        if I11[0] <= v <= I11[1]:
+        if I12[0] <= v <= I12[1]:
             self.em(f"ADDI {rr}, zero, {v}")
         else:
-            lo = v & 0x7FF
-            if lo >= 0x400:
-                lo -= 0x800
-            hi = (v - lo) >> 11
-            self.em(f"LUI {rr}, {hi & IMM21_MASK}")
+            lo = v & 0xFFF
+            if lo >= 0x800:
+                lo -= 0x1000
+            hi = (v - lo) >> 12
+            self.em(f"LUI {rr}, {hi & IMM20_MASK}")
             if lo:
                 self.em(f"ADDI {rr}, {rr}, {lo}")
         return rr
@@ -337,15 +351,49 @@ class HL:
     def als(self, c):
         o = self.do
         self.strs.append((o, c))
-        self.do += 1 + len(c)
+        self.do += 4 + len(c)
         return o
 
     def _gfunc(self, f):
+        is_main = f.name == "main"
+        body_asm = []
+        saved_asm = self.asm
+        self.asm = body_asm
         self.em(f"{f.name}:")
+        for i, p in enumerate(f.params):
+            if i >= 8:
+                break
+            self.vl(p)
+        for i, p in enumerate(f.params):
+            if i >= 8:
+                break
+            self.sv(p, f"a{i}")
+        var_count_before = len(self.vars)
         for s in f.body:
             self._gs(s)
-        if not self.asm or self.asm[-1].strip() != "HALT":
-            self.em("HALT")
+        new_var_count = len(self.vars) - var_count_before
+        sreg_start = min(var_count_before, len(VREGS))
+        sreg_end = min(var_count_before + new_var_count, len(VREGS))
+        used_sregs = sreg_end - sreg_start
+        if not is_main:
+            save_count = 1 + used_sregs
+            stack_bytes = save_count * 4
+            prologue = [
+                f"    ADDI sp, sp, -{stack_bytes}",
+                "    SW ra, sp, 0",
+            ]
+            for i in range(used_sregs):
+                prologue.append(f"    SW {VREGS[sreg_start + i]}, sp, {(i + 1) * 4}")
+            body_asm[1:1] = prologue
+            for i in range(used_sregs - 1, -1, -1):
+                body_asm.append(f"    LW {VREGS[sreg_start + i]}, sp, {(i + 1) * 4}")
+            body_asm.append("    LW ra, sp, 0")
+            body_asm.append(f"    ADDI sp, sp, {stack_bytes}")
+            body_asm.append("    JR ra")
+        elif not body_asm or body_asm[-1].strip() != "HALT":
+            body_asm.append("    HALT")
+        self.asm = saved_asm
+        self.asm.extend(body_asm)
         self.dl.append(f.name)
 
     def _gs(self, s):
@@ -381,14 +429,14 @@ class HL:
                 else (len(iv.elements) if isinstance(iv, ArrayLiteral) else 4)
             )
             o = self.do
-            self.do += sz
+            self.do += sz * 4
             if isinstance(iv, ArrayLiteral):
                 for i, el in enumerate(iv.elements):
                     if i >= sz:
                         break
                     v = self.ge(el)
                     if isinstance(v, int):
-                        self.dv[o + i] = v
+                        self.dv[o + i * 4] = v
                     else:
                         vr = self.er(v)
                         ar = self.ar()
@@ -400,9 +448,9 @@ class HL:
                     ro, rn = r[1], r[2]
                     for i in range(min(rn, sz)):
                         ar = self.ar()
-                        self.em(f"ADDI {ar}, gp, {ro + i}")
+                        self.em(f"ADDI {ar}, gp, {ro + i * 4}")
                         self.em(f"LW {ar}, {ar}, 0")
-                        self.em(f"SW {ar}, gp, {o + i}")
+                        self.em(f"SW {ar}, gp, {o + i * 4}")
             self.arrays[n] = (o, sz)
             self.vars[n] = ("arr", o, sz)
             return
@@ -440,8 +488,9 @@ class HL:
         vr = self.er(self.ge(s.value))
         ir = self.er(self.ge(tg.index))
         ar = self.ar()
-        self.em(f"ADDI {ar}, gp, {o}")
-        self.em(f"ADD {ar}, {ar}, {ir}")
+        self.em(f"SLLI {ar}, {ir}, 2")
+        self.em(f"ADDI {ar}, {ar}, {o}")
+        self.em(f"ADD {ar}, {ar}, gp")
         self.em(f"SW {vr}, {ar}, 0")
 
     def _la(self, n):
@@ -466,12 +515,12 @@ class HL:
                 le2 = self.ml("pe")
                 self.em(f"ADDI {ba}, gp, {so}")
                 self.em(f"LW {le}, {ba}, 0")
-                self.em(f"ADDI {ba}, {ba}, 1")
+                self.em(f"ADDI {ba}, {ba}, 4")
                 self.em(f"ADDI {i2}, zero, 0")
                 self.em(f"{ls}:")
                 self.em(f"BGE {i2}, {le}, {le2}")
                 self.em(f"ADD {ch}, {ba}, {i2}")
-                self.em(f"LW {ch}, {ch}, 0")
+                self.em(f"LB {ch}, {ch}, 0")
                 self.em(f"SW {ch}, {po}, 0")
                 self.em(f"ADDI {i2}, {i2}, 1")
                 self.em(f"J {ls}")
@@ -533,7 +582,7 @@ class HL:
             for i, a in enumerate(x.args):
                 if i < 8:
                     self.em(f"MV a{i}, {self.er(self.ge(a))}")
-            self.em(f"JAL {x.name}")
+            self.em(f"JAL ra, {x.name}")
 
     def _gc(self, k, cond, body, eb):
         lc = self.ml("wc") if k == "while" else None
@@ -564,7 +613,6 @@ class HL:
             self.em(f"J {lc}")
             self.em(f"{le2}:")
 
-
     def ge(self, e, target_reg=None):
         if isinstance(e, (IntLiteral, BoolLiteral, CharLiteral)):
             return e.value if not isinstance(e, BoolLiteral) else (1 if e.value else 0)
@@ -575,8 +623,9 @@ class HL:
             o, _n = bl
             ir = self.er(self.ge(e.index))
             ar = self.ar()
-            self.em(f"ADDI {ar}, gp, {o}")
-            self.em(f"ADD {ar}, {ar}, {ir}")
+            self.em(f"SLLI {ar}, {ir}, 2")
+            self.em(f"ADDI {ar}, {ar}, {o}")
+            self.em(f"ADD {ar}, {ar}, gp")
             r = target_reg or self.ar()
             self.em(f"LW {r}, {ar}, 0")
             return r
@@ -633,7 +682,7 @@ class HL:
             for i, a in enumerate(e.args):
                 if i < 8:
                     self.em(f"MV a{i}, {self.er(self.ge(a))}")
-            self.em(f"JAL {e.name}")
+            self.em(f"JAL ra, {e.name}")
             r = target_reg or self.ar()
             self.em(f"MV {r}, a0")
             return r
@@ -682,7 +731,7 @@ class HL:
             ro, _rn = right[1], right[2]
             ro2 = self.do
             orig = ro2
-            self.do += ln
+            self.do += ln * 4
             nf = ln // 4
             tl = ln % 4
             vl = self.av()
@@ -703,9 +752,9 @@ class HL:
                 self.em(f"VLD {vr}, [{rro}+0]")
                 self.em(f"{VBM[op]} {vd}, {vl}, {vr}")
                 self.em(f"VST {vd}, [{rro2}+0]")
-                self.em(f"ADDI {rlo}, {rlo}, 4")
-                self.em(f"ADDI {rro}, {rro}, 4")
-                self.em(f"ADDI {rro2}, {rro2}, 4")
+                self.em(f"ADDI {rlo}, {rlo}, 16")
+                self.em(f"ADDI {rro}, {rro}, 16")
+                self.em(f"ADDI {rro2}, {rro2}, 16")
                 self.em(f"ADDI {ci}, {ci}, -1")
                 self.em(f"BNE {ci}, zero, {lh}")
             if tl > 0:
@@ -717,9 +766,9 @@ class HL:
                     self.em(f"LW {sr}, {rro}, 0")
                     self.em(f"{BM[op]} {sd}, {sl}, {sr}")
                     self.em(f"SW {sd}, {rro2}, 0")
-                    self.em(f"ADDI {rlo}, {rlo}, 1")
-                    self.em(f"ADDI {rro}, {rro}, 1")
-                    self.em(f"ADDI {rro2}, {rro2}, 1")
+                    self.em(f"ADDI {rlo}, {rlo}, 4")
+                    self.em(f"ADDI {rro}, {rro}, 4")
+                    self.em(f"ADDI {rro2}, {rro2}, 4")
             return ("arr", orig, ln)
         if isinstance(left, int) and isinstance(right, int):
             ops = {
@@ -743,13 +792,13 @@ class HL:
             return ops.get(op, 0)
         if op in ("<", ">", "<=", ">=", "==", "!="):
             return (op, self.er(left), self.er(right))
-        if isinstance(right, int) and I11[0] <= right <= I11[1]:
+        if isinstance(right, int) and I12[0] <= right <= I12[1]:
             lr = self.er(left)
             res = target_reg or self.ar()
             if op == "+":
                 self.em(f"ADDI {res}, {lr}, {right}")
                 return res
-            if op == "-" and I11[0] <= -right <= I11[1]:
+            if op == "-" and I12[0] <= -right <= I12[1]:
                 self.em(f"ADDI {res}, {lr}, {-right}")
                 return res
             if op in ("&", "|", "^", "<<", ">>"):
@@ -769,15 +818,15 @@ class HL:
             elif isinstance(loc, tuple) and loc[0] == "arr":
                 off, sz = loc[1], loc[2]
                 for i in range(sz):
-                    its.append((off + i, f"    .word {self.dv.get(off + i, 0)}  ; {n}[{i}]"))
+                    its.append((off + i * 4, f"    .word {self.dv.get(off + i * 4, 0)}  ; {n}[{i}]"))
         esc = {"\n": "\\n", "\t": "\\t", "\r": "\\r", '"': '\\"', "\\": "\\\\"}
         for o, c in self.strs:
             its.append((o, f'    .string "{"".join(esc.get(ch, ch) for ch in c)}"'))
         its.sort(key=lambda x: x[0])
-        lns = ["    .org 0", "    J main", "    .org 1", "data_start:"]
-        cur = 1
+        lns = ["    .org 0", "    J main", "    .org 4", "data_start:"]
+        cur = 4
         for ao, line in its:
-            addr = 1 + ao
+            addr = 4 + ao
             if addr > cur:
                 lns.append(f"    .org {addr}")
                 cur = addr
@@ -786,14 +835,20 @@ class HL:
                 m = re.search(r'\.string "(.*)"', line)
                 if m:
                     s_raw = m.group(1)
-                    s_len = len(s_raw.replace("\\n", "\n").replace("\\t", "\t").replace("\\r", "\r").replace('\\"', '"').replace("\\\\", "\\"))
-                    cur += 1 + s_len
+                    s_len = len(
+                        s_raw.replace("\\n", "\n")
+                        .replace("\\t", "\t")
+                        .replace("\\r", "\r")
+                        .replace('\\"', '"')
+                        .replace("\\\\", "\\")
+                    )
+                    cur += 4 + s_len
             else:
-                cur += 1
-        code_base = 1 + self.do
+                cur += 4
+        code_base = 4 + self.do
         if not its:
             lns.append("    .word 0  ; dummy")
-            code_base = 2
+            code_base = 8
         lns.append(f"    .org {code_base}")
         for ln in self.asm:
             lns.append(ln)

@@ -1,23 +1,24 @@
     .org 0
     J main
-    .org 256
+    .org 4
 data_start:
-    .org 1
+    .word 0  ; dummy
+    .org 8
     main:
     ADDI gp, zero, data_start
     MV s0, zero
-    w_1:
+    wc_1:
     ADDI t0, zero, 10
-    BGE s0, t0, ew_2
-    ADDI t1, s0, 48
-    LUI t2, 0
-    ADDI t2, t2, -12
-    SW t1, t2, 0
+    BGE s0, t0, en_2
+    LUI t1, 0
+    ADDI t1, t1, -12
+    ADDI t2, s0, 48
+    SW t2, t1, 0
     ADDI s0, s0, 1
-    J w_1
-    ew_2:
-    ADDI t3, zero, 10
-    LUI t4, 0
-    ADDI t4, t4, -12
-    SW t3, t4, 0
+    J wc_1
+    en_2:
+    LUI t3, 0
+    ADDI t3, t3, -12
+    ADDI t4, zero, 10
+    SW t4, t3, 0
     HALT

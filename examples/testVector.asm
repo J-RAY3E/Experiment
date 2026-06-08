@@ -1,54 +1,69 @@
-; Vector version: add two 4-element arrays using vector instructions
-; Array A at .org 200 (values: 1, 2, 3, 4)
-; Array B at .org 204 (values: 10, 20, 30, 40)
-; Array C at .org 208 (result, initialized to 0)
-; Prints: "11 22 33 44\n"
-
     .org 0
-    ADDI s0, zero, 200   ; s0 = base of array A
-    ADDI s1, zero, 204   ; s1 = base of array B
-    ADDI s2, zero, 208   ; s2 = base of array C
-    VLD  V0, [s0+0]      ; load A[0..3] into V0
-    VLD  V1, [s1+0]      ; load B[0..3] into V1
-    VADD V2, V0, V1      ; V2 = V0 + V1 (element-wise)
-    VST  V2, [s2+0]      ; store result to C[0..3]
-
-    ADDI s3, zero, 0     ; loop index i = 0
-    ADDI t0, zero, 4     ; loop bound
-
-print_loop:
-    BGE  s3, t0, done
-    ADD  t1, s2, s3      ; address of C[i]
-    LW   t2, t1, 0       ; load C[i]
+    J main
+    .org 4
+data_start:
+    .word 1  ; a[0]
+    .word 2  ; a[1]
+    .word 3  ; a[2]
+    .word 4  ; a[3]
+    .word 10  ; b[0]
+    .word 20  ; b[1]
+    .word 30  ; b[2]
+    .word 40  ; b[3]
+    .word 0  ; c[0]
+    .word 0  ; c[1]
+    .word 0  ; c[2]
+    .word 0  ; c[3]
+    .org 52
+    main:
+    ADDI gp, zero, data_start
+    ADDI t0, gp, 0
+    ADDI t1, gp, 16
+    ADDI t2, gp, 32
+    ADDI t3, zero, 1
+    vh_1:
+    VLD V0, [t0+0]
+    VLD V1, [t1+0]
+    VADD V2, V0, V1
+    VST V2, [t2+0]
+    ADDI t0, t0, 16
+    ADDI t1, t1, 16
+    ADDI t2, t2, 16
+    ADDI t3, t3, -1
+    BNE t3, zero, vh_1
+    MV s3, zero
+    wc_2:
+    ADDI t4, zero, 4
+    BGE s3, t4, en_3
+    SLLI t5, s3, 2
+    ADDI t5, t5, 32
+    ADD t5, t5, gp
+    LW t6, t5, 0
+    ADDI t0, zero, 10
+    DIV s4, t6, t0
+    SLLI t1, s3, 2
+    ADDI t1, t1, 32
+    ADD t1, t1, gp
+    LW t2, t1, 0
     ADDI t3, zero, 10
-    DIV  t4, t2, t3      ; tens digit
-    REM  t5, t2, t3      ; ones digit
-    ADDI t4, t4, 48
-    SW   t4, zero, 0xFFF4
-    ADDI t5, t5, 48
-    SW   t5, zero, 0xFFF4
-    ADDI t6, zero, 32    ; space
-    SW   t6, zero, 0xFFF4
+    REM s5, t2, t3
+    LUI t4, 0
+    ADDI t4, t4, -12
+    ADDI t5, s4, 48
+    SW t5, t4, 0
+    LUI t6, 0
+    ADDI t6, t6, -12
+    ADDI t0, s5, 48
+    SW t0, t6, 0
+    LUI t1, 0
+    ADDI t1, t1, -12
+    ADDI t2, zero, 32
+    SW t2, t1, 0
     ADDI s3, s3, 1
-    J print_loop
-
-done:
-    ADDI t0, zero, 10    ; newline
-    SW   t0, zero, 0xFFF4
+    J wc_2
+    en_3:
+    LUI t3, 0
+    ADDI t3, t3, -12
+    ADDI t4, zero, 10
+    SW t4, t3, 0
     HALT
-
-    .org 200
-    .word 1
-    .word 2
-    .word 3
-    .word 4
-    .org 204
-    .word 10
-    .word 20
-    .word 30
-    .word 40
-    .org 208
-    .word 0
-    .word 0
-    .word 0
-    .word 0

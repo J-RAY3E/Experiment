@@ -2,7 +2,7 @@
 ; 1024 iterations: VLD + VLDconst + VADD + VST per iteration (4 elements at once)
     .org 0
     ADDI s0, zero, 200
-    ADDI s2, zero, 204    ; const vector [1,1,1,1]
+    ADDI s2, zero, 216    ; const vector [1,1,1,1] after 4 ints
     ADDI t0, zero, 1024
     ADDI s1, zero, 0
 vloop:
@@ -18,7 +18,7 @@ vloop:
     .word 0
     .word 0
     .word 0
-    .org 204
+    .org 216
     .word 1
     .word 1
     .word 1

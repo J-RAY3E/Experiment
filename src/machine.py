@@ -10,17 +10,13 @@ from src.isa import REG, REG_NAMES, STACK_BASE, decode
 
 
 def load_binary(bin_path: str, lst_path: str | None = None) -> tuple[list[int], dict[int, int], int]:
-    """Load a binary file into instruction and data word lists.
+    """Load a binary file into instruction and data byte maps.
 
     Returns:
-        instr_words: instruction memory (list indexed by binary address)
-        data_map:    data memory map {logical_address: word_value}
+        instr_words: instruction memory (list indexed by word address)
+        data_map:    data memory map {byte_address: byte_value}
         data_base:   base address of data section (for gp register)
     """
-    with open(bin_path, "rb") as f:
-        raw = f.read()
-    words = [struct.unpack("<I", raw[i : i + 4])[0] for i in range(0, len(raw), 4)]
-
     instr_words: list[int] = []
     data_map: dict[int, int] = {}
     data_base: int = 0
@@ -29,7 +25,6 @@ def load_binary(bin_path: str, lst_path: str | None = None) -> tuple[list[int], 
         with open(lst_path, encoding="utf-8") as f:
             content = f.read()
         lines = content.strip().split("\n")
-        all_addrs: list[int] = []
         instr_by_addr: dict[int, int] = {}
         data_by_addr: dict[int, int] = {}
         for line in lines:
@@ -39,20 +34,32 @@ def load_binary(bin_path: str, lst_path: str | None = None) -> tuple[list[int], 
             addr = int(m.group(1), 16)
             word = int(m.group(2), 16)
             rest = m.group(3).strip()
-            all_addrs.append(addr)
-            if rest.startswith(".WORD") or rest.startswith(".STRING_LEN") or rest.startswith(".CHAR"):
+            if rest.startswith(".WORD"):
                 data_by_addr[addr] = word
+            elif rest.startswith(".STRING_LEN"):
+                for bi in range(4):
+                    data_by_addr[addr + bi] = (word >> (bi * 8)) & 0xFF
+            elif rest.startswith(".CHAR"):
+                data_by_addr[addr] = word & 0xFF
+            elif rest.startswith(".BYTE"):
+                data_by_addr[addr] = word & 0xFF
             else:
                 instr_by_addr[addr] = word
         if instr_by_addr:
             data_base = 0
-            max_addr = max(all_addrs)
-            instr_words = [instr_by_addr.get(i, 0) for i in range(max_addr + 1)]
+            max_byte_addr = max(k for k in instr_by_addr)
+            num_instr = (max_byte_addr // 4) + 1
+            instr_words = [instr_by_addr.get(i * 4, 0) for i in range(num_instr)]
             for a, w in data_by_addr.items():
                 data_map[a] = w
 
     if not instr_words:
-        instr_words = list(words)
+        with open(bin_path, "rb") as f:
+            raw = f.read()
+        pad = len(raw) % 4
+        if pad:
+            raw += b"\x00" * (4 - pad)
+        instr_words = [struct.unpack("<I", raw[i : i + 4])[0] for i in range(0, len(raw), 4)]
 
     return instr_words, data_map, data_base
 
@@ -103,8 +110,8 @@ class Machine:
         mi = self.cp.current_mi(ir)
         mi_name = self.cp.phase_name
         inst_word: int | None = None
-        if mi.ir_we and 0 <= self.dp.pc < len(self.instr_mem):
-            inst_word = self.instr_mem[self.dp.pc]
+        if mi.ir_we and 0 <= (self.dp.pc >> 2) < len(self.instr_mem):
+            inst_word = self.instr_mem[self.dp.pc >> 2]
 
         done = self.dp.tick(mi, inst_word)
         self._snapshot(mi_name)
@@ -177,11 +184,10 @@ class Machine:
         hex_str = " ".join(f"{w:08X}" for w in self.instr_mem)
         with open(target_prefix + ".hex", "w", encoding="utf-8") as f:
             f.write(hex_str + "\n")
-        words = [w for w in self.dp.mem.mem if w != 0]
-        mem_data = struct.pack(f"<{len(words)}I", *words) if words else b""
+        bytes_data = bytes(b for b in self.dp.mem.mem if b != 0)
         with open(target_prefix + ".mem", "wb") as f:
-            f.write(mem_data)
-        mem_hex = " ".join(f"{w:08X}" for w in words)
+            f.write(bytes_data)
+        mem_hex = " ".join(f"{b:02X}" for b in bytes_data)
         with open(target_prefix + ".mem.hex", "w", encoding="utf-8") as f:
             f.write(mem_hex + "\n" if mem_hex else "\n")
 

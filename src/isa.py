@@ -5,6 +5,8 @@ from typing import Any
 OPCODE_BITS = 6
 REG_BITS = 5
 IMM11_BITS = 11
+IMM12_BITS = 12
+IMM20_BITS = 20
 IMM21_BITS = 21
 IMM26_BITS = 26
 WORD_BITS = 32
@@ -13,6 +15,9 @@ OPCODE_MASK = 0x3F
 REG_MASK = 0x1F
 IMM11_MASK = 0x7FF
 IMM11_SIGN = 0x400
+IMM12_MASK = 0xFFF
+IMM12_SIGN = 0x800
+IMM20_MASK = 0xFFFFF
 IMM21_MASK = 0x1FFFFF
 IMM26_MASK = 0x3FFFFFF
 WORD_MASK = 0xFFFFFFFF
@@ -29,8 +34,8 @@ OUT_PORT = 0xFFFFFFF4
 NUM_REGS = 32
 NUM_VREGS = 8
 VLANES = 4
-DATA_MEM_SIZE = 8192
-STACK_BASE = 0x1000
+DATA_MEM_SIZE = 32768
+STACK_BASE = 0x4000
 
 OPCODES = {
     "NOP": 0x00,
@@ -121,8 +126,8 @@ REG_NAMES = [
 
 REG = {n: i for i, n in enumerate(REG_NAMES)}
 
-R_FORMAT = {"ADD","SUB","MUL","DIV","REM","MULH","AND","OR","XOR","NOT","SLL","SRL","SRA","SLT","NOP"}
-I_FORMAT = {"ADDI","ANDI", "ORI", "XORI", "SLLI", "SRLI", "SRAI", "SLTI"}
+R_FORMAT = {"ADD", "SUB", "MUL", "DIV", "REM", "MULH", "AND", "OR", "XOR", "NOT", "SLL", "SRL", "SRA", "SLT", "NOP"}
+I_FORMAT = {"ADDI", "ANDI", "ORI", "XORI", "SLLI", "SRLI", "SRAI", "SLTI"}
 L_FORMAT = {"LW", "LB"}
 S_FORMAT = {"SW", "SB"}
 B_FORMAT = {"BEQ", "BNE", "BLT", "BLE", "BGT", "BGE", "BGTU", "BLEU"}
@@ -138,12 +143,21 @@ R_ILV_FORMAT = R_IL_FORMAT | V_FORMAT
 
 HALT_WORD = OPCODES["HALT"] << OPCODE_SHIFT
 
+
 def _sext11(imm: int) -> int:
     return imm | ~IMM11_MASK if imm & IMM11_SIGN else imm
+
+
+def _sext12(imm: int) -> int:
+    return imm | ~IMM12_MASK if imm & IMM12_SIGN else imm
+
 
 def decode(word: int) -> dict[str, Any]:
     op = (word >> OPCODE_SHIFT) & OPCODE_MASK
     name = OPCODE_NAMES.get(op, "???")
+    imm12 = word & IMM12_MASK
+    imm11 = word & IMM11_MASK
+    imm11_only = name in B_FORMAT or name in S_FORMAT
     return {
         "opcode": op,
         "name": name,
@@ -151,11 +165,13 @@ def decode(word: int) -> dict[str, Any]:
         "rd": (word >> RD_SHIFT) & REG_MASK,
         "rs1": (word >> RS1_SHIFT) & REG_MASK,
         "rs2": (word >> RS2_SHIFT) & REG_MASK,
-        "imm": word & IMM11_MASK,
-        "imm_s": _sext11(word & IMM11_MASK),
+        "imm": imm11 if imm11_only else imm12,
+        "imm_s": _sext11(imm11) if imm11_only else _sext12(imm12),
+        "imm_u20": word & IMM20_MASK,
         "imm_u21": word & IMM21_MASK,
         "imm_u26": word & IMM26_MASK,
     }
+
 
 def encode(opcode: int, rd: int = 0, rs1: int = 0, rs2: int = 0, imm: int = 0) -> int:
     name = OPCODE_NAMES.get(opcode, "")

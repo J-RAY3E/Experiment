@@ -123,10 +123,17 @@ class DataMemory:
         addr &= WORD_MASK
         if addr == IN_PORT:
             return self._read_input() if self._read_input else 0
-        return self.mem[addr] if 0 <= addr < len(self.mem) else 0
+        if 0 <= addr < len(self.mem) - 3:
+            return (
+                self.mem[addr] | (self.mem[addr + 1] << 8) | (self.mem[addr + 2] << 16) | (self.mem[addr + 3] << 24)
+            ) & WORD_MASK
+        return 0
 
     def load_byte(self, addr: int) -> int:
-        val = self.load_word(addr) & BYTE_MASK
+        addr &= WORD_MASK
+        if addr == IN_PORT:
+            return self._read_input() if self._read_input else 0
+        val = self.mem[addr] if 0 <= addr < len(self.mem) else 0
         return (val | ~BYTE_MASK) & WORD_MASK if val & BYTE_SIGN else val
 
     def store_word(self, addr: int, value: int) -> None:
@@ -134,8 +141,11 @@ class DataMemory:
         if addr == OUT_PORT:
             if self._write_output:
                 self._write_output(value & BYTE_MASK)
-        elif 0 <= addr < len(self.mem):
-            self.mem[addr] = value & WORD_MASK
+        elif 0 <= addr < len(self.mem) - 3:
+            self.mem[addr] = value & 0xFF
+            self.mem[addr + 1] = (value >> 8) & 0xFF
+            self.mem[addr + 2] = (value >> 16) & 0xFF
+            self.mem[addr + 3] = (value >> 24) & 0xFF
 
     def store_byte(self, addr: int, value: int) -> None:
         addr &= WORD_MASK
@@ -143,7 +153,7 @@ class DataMemory:
             if self._write_output:
                 self._write_output(value & BYTE_MASK)
         elif 0 <= addr < len(self.mem):
-            self.mem[addr] = (self.mem[addr] & ~BYTE_MASK) | (value & BYTE_MASK)
+            self.mem[addr] = value & 0xFF
 
 
 class DataPath:
@@ -193,7 +203,7 @@ class DataPath:
                 self.ir = inst_word
             self._ctx = decode(self.ir)
             if mi.pc_inc:
-                self.pc = (self.pc + 1) & WORD_MASK
+                self.pc = (self.pc + 4) & WORD_MASK
             return False
 
         if mi.halt:
@@ -227,7 +237,7 @@ class DataPath:
 
         if mi.vbase_we:
             if mi.vbase_sel:
-                self.vbase = (self.vbase + 1) & WORD_MASK
+                self.vbase = (self.vbase + 4) & WORD_MASK
             else:
                 self.vbase = self.mar
 
@@ -252,7 +262,7 @@ class DataPath:
         elif mi.reg_src == REG_PC:
             self.feedback_bus = self.pc
         elif mi.reg_src == REG_IMM_SHL11:
-            self.feedback_bus = (ctx["imm_u21"] << 11) & WORD_MASK
+            self.feedback_bus = (ctx["imm_u20"] << 12) & WORD_MASK
         elif mi.reg_src == REG_IMM_U26:
             self.feedback_bus = ctx["imm_u26"]
         elif mi.reg_src == REG_IMM_U21:
