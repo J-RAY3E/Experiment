@@ -356,7 +356,7 @@ class HL:
 
     def _gfunc(self, f):
         is_main = f.name == "main"
-        body_asm = []
+        body_asm: list[str] = []
         saved_asm = self.asm
         self.asm = body_asm
         self.em(f"{f.name}:")
