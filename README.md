@@ -50,17 +50,7 @@ alg | risc | harv | mc | tick | binary | stream | mem | pstr | alg1 | vector
 ### Синтаксис (BNF)
 
 ```bnf
-<comment>      ::= "//" <any-char>* <newline>
-<identifier>   ::= [a-zA-Z_][a-zA-Z0-9_]*
-<number>       ::= [0-9]+
-<hex-number>   ::= "0x" [0-9a-fA-F]+
-<char>         ::= "'" <print-char> "'"
-<string>       ::= '"' <print-char>* '"'
-<separator>    ::= "{" | "}" | "(" | ")" | "[" | "]" | ";" | ","
-
 <program>      ::= <function>*
-
-<var-decl>     ::= "let" <identifier> ("[" <expr> "]")? ("=" <expr>)?
 
 <function>     ::= "function" <identifier> "(" <param-list>? ")" <block>
 
@@ -78,6 +68,8 @@ alg | risc | harv | mc | tick | binary | stream | mem | pstr | alg1 | vector
                  | "halt" ";"
                  | ";"
 
+<var-decl>     ::= "let" <identifier> ("[" <expr> "]")? ("=" <expr>)?
+
 <assignment>   ::= <identifier> ("[" <expr> "]")* "=" <expr>
 
 <if-stmt>      ::= "if" "(" <expr> ")" <statement> ("else" <statement>)?
@@ -87,6 +79,10 @@ alg | risc | harv | mc | tick | binary | stream | mem | pstr | alg1 | vector
 <return-stmt>  ::= "return" <expr>?
 
 <call-stmt>    ::= <identifier> "(" <arg-list>? ")"
+                 | "print" "(" <expr> ")"
+                 | "print_num" "(" <expr> ")"
+                 | "print_str" "(" <expr> ")"
+                 | "read" "(" ")"
 
 <expr>         ::= <literal>
                  | <identifier>
@@ -97,7 +93,19 @@ alg | risc | harv | mc | tick | binary | stream | mem | pstr | alg1 | vector
                  | "{" <arg-list>? "}"
                  | "(" <expr> ")"
 
-<literal>      ::= <number> | <hex-number> | <char> | <string> | "true" | "false"
+<literal>      ::= <int-literal> | <string-literal> | "true" | "false"
+
+<int-literal>  ::= <number> | <hex-number> | <char-literal>
+
+<number>       ::= [0-9]+
+
+<hex-number>   ::= "0x" [0-9a-fA-F]+
+
+<char-literal> ::= "'" <ascii-char> "'"
+
+<string-literal> ::= '"' <ascii-char>* '"'
+
+<ascii-char>   ::= <any printable ASCII character> | "\n" | "\t" | "\r" | "\\" | "\'"
 
 <arg-list>     ::= <expr> ("," <expr>)*
 
@@ -108,6 +116,10 @@ alg | risc | harv | mc | tick | binary | stream | mem | pstr | alg1 | vector
                  | "&" | "|" | "^"
                  | "==" | "!=" | "<" | ">" | "<=" | ">="
                  | "&&" | "||"
+
+<identifier>   ::= [a-zA-Z_][a-zA-Z0-9_]*
+
+<comment>      ::= "//" <any-char>* <newline>
 ```
 
 ### Семантика
@@ -178,6 +190,8 @@ arr[i + 1] = 42;      // индекс может быть выражением
 
 При применении бинарных операторов (`+`, `-`, `*`, `/`) к двум массивам одинакового размера компилятор генерирует векторные инструкции (`VLD`/`VADD`/`VST` и т.д.), обрабатывающие 4 элемента за раз (векторно). Результат сохраняется в новый массив.
 
+> **Примечание:** Векторизация возможна только для массивов размером ровно `VLANES` (4 элемента), совпадающих с числом lane в векторном регистре. Для массивов других размеров компилятор генерирует скалярный код.
+
 ```javascript
 let a = {1, 2, 3, 4};
 let b = {5, 6, 7, 8};
@@ -206,11 +220,11 @@ function main() {
     J main
     .org 4
 data_start:
-    .word 0  ; заглушка для gp-относительной адресации
+    .word 0  ; dummy
     .org 8
     main:
     ADDI gp, zero, data_start
-    MV s0, zero       ; псевдоинструкция: ADDI rd, rs, 0
+    MV s0, zero
     wc_1:
     ADDI t0, zero, 10
     BGE s0, t0, en_2
@@ -305,23 +319,23 @@ data_start:
 #### Data memory
 
 ```text
-0x0000  +------------------------+
-        | литералы, статические  |
-        | данные программы       |
-        | (.word, .string)       |
-        |                        |
-        |  gp-относительная глобальная |
-        |  variables (data_start)|
-        |                        |
-0x4000  +------------------------+
-        | stack (растёт вниз)    |
-        |   ...                  |
-        |   saved ra, locals     |
+0x00000000  +------------------------+
+            | литералы, статические  |
+            | данные программы       |
+            | (.word, .string)       |
+            |                        |
+            |  gp-относительная      |
+            |  (data_start)          |
+            |                        |
+0x00004000  +------------------------+
+            | stack (растёт вниз)    |
+            |   ...                  |
+            |   saved ra, locals     |
 0xFFFFFFF0  +------------------------+
-         | IN_PORT  (read-only)   |
+            | IN_PORT  (read-only)   |
 0xFFFFFFF4  +------------------------+
-         | OUT_PORT (write-only)  |
-         +------------------------+
+            | OUT_PORT (write-only)  |
+            +------------------------+
 ```
  
 #### Memory-mapped I/O (вариант `mem`)
@@ -682,11 +696,13 @@ Golden-тест `vector_demo` проверяет, что вывод равен `
 
 | Метрика                              | Scalar (HL) | HL Vector |
 | ------------------------------------ | ----------: | --------: |
-| Тактов до `HALT` (полная программа)  | 291         | 277       |
-| Ускорение (полная программа)         | 1×          | **~1.05×**|
-| Выход программы                      | `11 22 33 44 \n` | `11 22 33 44 \n` |
-| Тактов до `HALT` (только `c = a + b`) | 148         | 44        |
-| Ускорение (только `c = a + b`)       | 1×          | **~3.36×**|
+| Тактов до `HALT` (полная программа)  | 843         | 593       |
+| Ускорение (полная программа)         | 1×          | **~1.42×**|
+| Выход программы                      | `11 22 33 44 55 66 77 88 \n` | `11 22 33 44 55 66 77 88 \n` |
+| Тактов до `HALT` (только `c = a + b`) | 324         | 74        |
+| Ускорение (только `c = a + b`)       | 1×          | **~4.38×**|
+
+> **Почему так?** Скалярный цикл тратит 37 тактов на элемент (адресация + LW + LW + ADD + SW + loop overhead). Векторный — 7.5 тактов на элемент (VLD + VLD + VADD + VST делятся на 4 элемента). Разница в скорости обусловлена не только шириной 4×, но и меньшим числом итераций (2 вместо 8), что снижает overhead цикла.
 
 
  
