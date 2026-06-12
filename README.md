@@ -853,7 +853,6 @@ JL_EX2 (24),   VLD_W0 (25),   VLD_W1 (26),   VLD_W2 (27)
 | `mar_we`              | `MAR ← ALU_OUT`                                                                  |
 | `mem_rd` / `mem_wr`   | строб чтения / записи в память                                                   |
 | `mem_byte`            | байтовый режим (`LB`/`SB`)                                                       |
-| `check_out`           | разрешение обработки `OUT_PORT`                                                  |
 | `reg_we`              | разрешение записи в регистровый файл                                             |
 | `reg_src`             | источник `feedback_bus` для writeback                                            |
 | `valu_exec`           | строб vector ALU                                                                 |
