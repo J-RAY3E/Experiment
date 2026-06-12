@@ -624,34 +624,25 @@ Vector extension добавляет 8 векторных регистров `V0.
 
 В варианте `vector` реализована поэлементная векторная обработка 4-lane массивов. Сравнение двух реализаций одной и той же задачи (сложение двух 4-элементных массивов, печать результата `11 22 33 44`):
 
-- **Scalar HL** (`examples/testNoVector.alg`): классический цикл с условными переходами, скомпилирован в `LW`/`ADD`/`SW`.
-- **HL Vector** (`examples/testVector.alg`): синтаксис массивов (`let a = {1,2,3,4}`, `let c = a + b`), компилятор генерирует `VLD`/`VADD`/`VST` — vector-инструкции, сгенерированные **транслятором HL**.
+- **Scalar HL** (`examples/testNoVector.alg`): цикл с поэлементным доступом через `LW`/`ADD`/`SW`.
+- **HL Vector** (`examples/testVector.alg`): синтаксис массивов (`let a = {1,2,3,4}`, `let c = a + b`), компилятор генерирует `VLD`/`VADD`/`VST`.
 
 `scalar loop` (см. `examples/testNoVector.alg`):
 
 ```alg
 function main() {
+    let a = {1, 2, 3, 4};
+    let b = {10, 20, 30, 40};
+    let c[4];
     let i = 0;
-    let a = 0;
-    let b = 0;
-    let c = 0;
-    let tens = 0;
-    let ones = 0;
 
     while (i < 4) {
-        if (i == 0) { a = 1;  b = 10; }
-        if (i == 1) { a = 2;  b = 20; }
-        if (i == 2) { a = 3;  b = 30; }
-        if (i == 3) { a = 4;  b = 40; }
-
-        c = a + b;
-        tens = c / 10;
-        ones = c % 10;
-
+        c[i] = a[i] + b[i];
+        let tens = c[i] / 10;
+        let ones = c[i] % 10;
         print(tens + 48);
         print(ones + 48);
         print(32);
-
         i = i + 1;
     }
 

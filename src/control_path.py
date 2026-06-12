@@ -40,7 +40,6 @@ class MI:
     mem_rd: bool = False
     mem_wr: bool = False
     mem_byte: bool = False
-    check_out: bool = False
 
     reg_we: bool = False
     reg_src: int = REG_NONE
@@ -198,7 +197,7 @@ _UROM: list[MI] = [
     MI(br_type=3),
     MI(a_sel=A_RS1, b_sel=B_IMM, alu_exec=True, mar_we=True, vbase_we=True, vbase_sel=False, br_type=1, addr=20),
     MI(reg_we=True, reg_src=REG_MEM, br_type=3),
-    MI(mem_wr=True, check_out=True, br_type=3),
+    MI(mem_wr=True, br_type=3),
     MI(mem_rd=True, addr_sel=True, v_reg_we=True, v_reg_src=1, lane_sel=3, br_type=3),
     MI(mem_wr=True, mem_data_src=1, lane_sel=0, addr_sel=True, vbase_we=True, vbase_sel=True, br_type=1, addr=21),
     MI(mem_wr=True, mem_data_src=1, lane_sel=1, addr_sel=True, vbase_we=True, vbase_sel=True, br_type=1, addr=22),
