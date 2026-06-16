@@ -161,57 +161,105 @@ def _process_line(text, lb):
 
 
 def _resolve_labels(lines):
-    labels, addr = {}, 0
+    labels, addr_code, addr_data = {}, 0, 0
+    use_separate = any(ln["m"] in (".TEXT", ".DATA") for ln in lines)
+    section = "code"
     for ln in lines:
         if ln["lb"]:
-            labels[ln["lb"]] = addr
+            labels[ln["lb"]] = addr_data if section == "data" else addr_code
         mnem = ln["m"]
-        if mnem == ".ORG":
-            addr = imm(ln["ops"][0])
-        elif mnem == ".WORD":
-            addr += len(ln["ops"]) * 4
-        elif mnem == ".STRING":
-            raw = ln["ops"][0]
-            s = raw[1:-1] if raw.startswith('"') else raw
-            s = s.replace("\\n", "\n").replace("\\t", "\t").replace("\\r", "\r")
-            s = s.replace('\\"', '"').replace("\\\\", "\\")
-            addr += 4 + len(s)
+        if mnem == ".TEXT":
+            section = "code"
+            if ln["ops"]:
+                addr_code = imm(ln["ops"][0])
+        elif mnem == ".DATA":
+            section = "data"
+            if ln["ops"]:
+                addr_data = imm(ln["ops"][0])
+        elif mnem == ".ORG":
+            n = imm(ln["ops"][0])
+            if use_separate:
+                if section == "code":
+                    addr_code = n
+                else:
+                    addr_data = n
+            else:
+                addr_code = addr_data = n
+        elif mnem in (".WORD", ".STRING"):
+            if not use_separate and section == "code":
+                addr_data = addr_code
+            section = "data"
+            if mnem == ".WORD":
+                addr_data += len(ln["ops"]) * 4
+            else:
+                raw = ln["ops"][0]
+                s = raw[1:-1] if raw.startswith('"') else raw
+                s = s.replace("\\n", "\n").replace("\\t", "\t").replace("\\r", "\r")
+                s = s.replace('\\"', '"').replace("\\\\", "\\")
+                addr_data += 4 + len(s)
         elif mnem:
-            addr += 4
+            section = "code"
+            addr_code += 4
     return labels
 
 
 def _generate_code(lines, labels):
     data, lst = b"", []
-    addr = 0
+    addr_code, addr_data = 0, 0
+    use_separate = any(ln["m"] in (".TEXT", ".DATA") for ln in lines)
+    section = "code"
     for ln in lines:
         mnem, ops = ln["m"], ln["ops"]
         if not mnem:
             continue
-        if mnem == ".ORG":
-            addr = imm(ops[0])
+        if mnem == ".TEXT":
+            section = "code"
+            if ops:
+                addr_code = imm(ops[0])
+            lst.append(f"        .text {ops[0]}" if ops else "        .text")
+        elif mnem == ".DATA":
+            section = "data"
+            if ops:
+                addr_data = imm(ops[0])
+            lst.append(f"        .data {ops[0]}" if ops else "        .data")
+        elif mnem == ".ORG":
+            n = imm(ops[0])
+            if use_separate:
+                if section == "code":
+                    addr_code = n
+                else:
+                    addr_data = n
+            else:
+                addr_code = addr_data = n
             lst.append(f"        .org {ops[0]}")
         elif mnem == ".WORD":
+            if not use_separate and section == "code":
+                addr_data = addr_code
+            section = "data"
             for o in ops:
                 w = imm(o) & WORD_MASK
                 data += struct.pack("<I", w)
-                lst.append(f"{addr:04X} - {w:08X} - .WORD {o}")
-                addr += 4
+                lst.append(f"{addr_data:04X} - {w:08X} - .WORD {o}")
+                addr_data += 4
         elif mnem == ".STRING":
+            if not use_separate and section == "code":
+                addr_data = addr_code
+            section = "data"
             s = ops[0][1:-1].replace("\\n", "\n").replace("\\t", "\t").replace("\\r", "\r")
             data += struct.pack("<I", len(s))
-            lst.append(f"{addr:04X} - {len(s):08X} - .STRING_LEN {len(s)}")
-            addr += 4
+            lst.append(f"{addr_data:04X} - {len(s):08X} - .STRING_LEN {len(s)}")
+            addr_data += 4
             for c in s:
                 val = ord(c)
                 data += struct.pack("B", val)
-                lst.append(f"{addr:04X} - {val:02X} - .CHAR {c!r}")
-                addr += 1
+                lst.append(f"{addr_data:04X} - {val:02X} - .CHAR {c!r}")
+                addr_data += 1
         else:
-            w = encode(mnem, ops, labels, addr)
+            section = "code"
+            w = encode(mnem, ops, labels, addr_code)
             data += struct.pack("<I", w)
-            lst.append(f"{addr:04X} - {w:08X} - {mnem} {' '.join(ops)}")
-            addr += 4
+            lst.append(f"{addr_code:04X} - {w:08X} - {mnem} {' '.join(ops)}")
+            addr_code += 4
     return data, lst
 
 

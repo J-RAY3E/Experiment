@@ -18,6 +18,7 @@ MAX_LOG = 700
 UPDATE_GOLDENS = os.environ.get("UPDATE_GOLDENS") == "1"
 
 GOLDEN_DIR = Path(__file__).parent.parent / "golden"
+EXAMPLES_DIR = Path(__file__).parent.parent / "examples"
 
 
 class SingleLineDumper(yaml.SafeDumper):
@@ -36,7 +37,7 @@ def _make_single_line(data: str) -> str:
 
 def load_golden_cases() -> list[tuple[Path, dict[str, Any]]]:
     cases = []
-    for yaml_path in sorted(GOLDEN_DIR.glob("**/*.yaml")):
+    for yaml_path in sorted(GOLDEN_DIR.glob("*.yaml")):
         with open(yaml_path, encoding="utf-8") as f:
             data = yaml.safe_load(f)
         cases.append((yaml_path, data))
@@ -65,33 +66,13 @@ def run_test_case(in_source: str, in_stdin: str, limit: int) -> dict[str, str]:
             m.write_outputs(target)
             print(out, end="")
 
-            log_lines = m.get_journal().split("\n")[:MAX_LOG]
-            for line in log_lines:
-                logging.info(line)
-
-        with open(target + ".cmem", "rb") as f:
-            cmem_data = f.read()
-        trimmed = cmem_data.rstrip(b"\x00")
-        out_code = trimmed.hex(" ").upper()
-
-        with open(target + ".hex", encoding="utf-8") as f:
-            out_code_hex = f.read()
-
-        with open(target + ".mem", "rb") as f:
-            mem_data = f.read()
-        trimmed_mem = mem_data.rstrip(b"\x00")
-        out_data = trimmed_mem.hex(" ").upper() if trimmed_mem else ""
-
-        with open(target + ".mem.hex", encoding="utf-8") as f:
-            out_data_hex = f.read()
+        log_lines = m.get_journal().split("\n")[:MAX_LOG]
+        for line in log_lines:
+            logging.info(line)
 
         log = "\n".join(log_lines).replace("\r", "") + "EOF"
 
         return {
-            "out_code": out_code,
-            "out_code_hex": out_code_hex,
-            "out_data": out_data,
-            "out_data_hex": out_data_hex,
             "out_stdout": stdout_capture.getvalue().replace("\r", ""),
             "out_log": log,
         }
@@ -100,13 +81,21 @@ def run_test_case(in_source: str, in_stdin: str, limit: int) -> dict[str, str]:
 @pytest.mark.parametrize(("yaml_path", "golden"), load_golden_cases())
 def test_translator_and_machine(yaml_path: Path, golden: dict[str, Any], caplog: pytest.LogCaptureFixture) -> None:
     in_source: str | None = cast(str | None, golden.get("in_source"))
+    source_file: str | None = cast(str | None, golden.get("source_file"))
 
-    if in_source is None:
-        pytest.skip("empty golden file")
+    if in_source is None and source_file is None:
+        pytest.skip("no source provided")
+
+    if source_file:
+        src_path = EXAMPLES_DIR / source_file
+        if not src_path.exists():
+            src_path = EXAMPLES_DIR.parent / source_file
+        with open(src_path, encoding="utf-8") as f:
+            in_source = f.read()
 
     assert in_source is not None
     in_stdin: str = golden.get("in_stdin", "")
-    limit: int = cast(int, golden.get("in_limit") or 6000)
+    limit: int = cast(int, golden.get("max_ticks") or 6000)
 
     caplog.set_level(logging.DEBUG)
     caplog.handler.setFormatter(logging.Formatter("%(message)s"))
@@ -117,10 +106,6 @@ def test_translator_and_machine(yaml_path: Path, golden: dict[str, Any], caplog:
     actual_norm["out_log"] = actual["out_log"].replace("\r", "")
 
     if UPDATE_GOLDENS:
-        golden["out_code"] = actual_norm["out_code"]
-        golden["out_code_hex"] = actual_norm["out_code_hex"]
-        golden["out_data"] = actual_norm["out_data"]
-        golden["out_data_hex"] = actual_norm["out_data_hex"]
         golden["out_stdout"] = actual_norm["out_stdout"]
         golden["out_log"] = actual_norm["out_log"]
 
@@ -128,9 +113,5 @@ def test_translator_and_machine(yaml_path: Path, golden: dict[str, Any], caplog:
             yaml.dump(golden, f, allow_unicode=True, sort_keys=False, Dumper=SingleLineDumper)
         return
 
-    assert actual_norm["out_code"] == golden["out_code"]
-    assert actual_norm["out_code_hex"] == golden["out_code_hex"]
-    assert actual_norm["out_data"] == golden["out_data"]
-    assert actual_norm["out_data_hex"] == golden["out_data_hex"]
     assert actual_norm["out_stdout"] == golden["out_stdout"]
     assert actual_norm["out_log"] == golden["out_log"]

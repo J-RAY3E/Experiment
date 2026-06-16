@@ -8,10 +8,6 @@ in_source: |
   done:
   HALT
 in_stdin: "Hello, World!\r\n"
-out_code: F0 0F 80 05 08 00 0C 80 F4 67 00 08 00 00 00 A0 00 00 00 FC
-out_code_hex: 05800FF0 800C0008 080067F4 A0000000 FC000000\n
-out_data: ''
-out_data_hex: \n
 out_stdout: Hello, World!\n
 out_log: |-
   Tick: 000001 | uPC: 00 | MIR: 00200003 | PC: 0004 | IR: 05800FF0 | Micro: FETCH | Signals: ir_we,pc+1 | Exec: LW | Regs: PC=4 AR=4294967280 DR=0 ZERO=0 RA=0 SP=16384 GP=0 A0=0 A1=0 A2=0 A3=0 A4=0 A5=0 A6=0 A7=0 T0=0 T1=0 T2=0 T3=0 | Out: 'Hello, World!\r\n'

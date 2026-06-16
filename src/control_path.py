@@ -1,7 +1,3 @@
-"""
-ControlPath: Horizontal microcoded control unit for RISC-IV.
-"""
-
 from dataclasses import dataclass, replace
 from typing import Any
 
@@ -58,7 +54,6 @@ class MI:
 
     @property
     def mir_word(self) -> int:
-        """Compact 64-bit representation of control signals for logging."""
         w = 0
         if self.ir_we:
             w |= 1 << 0
@@ -177,7 +172,6 @@ _ALU_OPS: dict[str, str] = {
     "VLD": "ADD",
     "VST": "ADD",
 }
-
 _UROM: list[MI] = [
     MI(ir_we=True, pc_inc=True, br_type=2),
     MI(a_sel=A_RS1, b_sel=B_RS2, alu_exec=True, reg_we=True, reg_src=REG_ALU, br_type=3),
@@ -239,6 +233,7 @@ UROM_NAMES = [
     "VLD_W1",
     "VLD_W2",
 ]
+
 DISPATCH = {
     "R": 1,
     "I": 2,
@@ -257,57 +252,65 @@ DISPATCH = {
 }
 
 
-class Microsequencer:
-    def __init__(self) -> None:
-        self.upc: int = 0
-
-    def current_mi(self, ir: int) -> MI:
-        mi = _UROM[self.upc]
-        patches: dict[str, Any] = {}
-        if mi.alu_exec:
-            name = OPCODE_NAMES.get((ir >> OPCODE_SHIFT) & OPCODE_MASK, "")
-            if not mi.alu_op:
-                patches["alu_op"] = _ALU_OPS.get(name, "ADD")
-            if mi.mem_rd or mi.mem_wr:
-                patches["mem_byte"] = name in ("LB", "SB")
-            if name == "NOT":
-                patches["b_sel"] = B_ZERO
-        return replace(mi, **patches) if patches else mi
-
-    def advance(self, ir: int) -> None:
-        mi = _UROM[self.upc]
-        if mi.halt:
-            return
-        if mi.br_type == 0:
-            self.upc += 1
-        elif mi.br_type == 1:
-            self.upc = mi.addr
-        elif mi.br_type == 2:
-            name = OPCODE_NAMES.get((ir >> OPCODE_SHIFT) & OPCODE_MASK, "")
-            fmt = _NAME_TO_FMT.get(name, "NOP")
-            self.upc = DISPATCH.get(fmt, DISPATCH["NOP"])
-        elif mi.br_type == 3:
-            self.upc = 0
-
-
 class ControlPath:
     def __init__(self) -> None:
-        self.seq = Microsequencer()
+        self.ar: int = 0
 
     @property
     def halted(self) -> bool:
-        return _UROM[self.seq.upc].halt
+        return _UROM[self.ar].halt
 
     @property
     def phase_name(self) -> str:
-        return UROM_NAMES[self.seq.upc] if self.seq.upc < len(UROM_NAMES) else f"U{self.seq.upc}"
+        return UROM_NAMES[self.ar] if self.ar < len(UROM_NAMES) else f"U{self.ar}"
 
     @property
     def upc(self) -> int:
-        return self.seq.upc
+        return self.ar
+
+    @upc.setter
+    def upc(self, value: int) -> None:
+        self.ar = value
 
     def current_mi(self, ir: int) -> MI:
-        return self.seq.current_mi(ir)
+        """Read uROM at AR, then decode variable signals from instruction opcode."""
+        mi = _UROM[self.ar]
+        if not mi.alu_exec and not mi.mem_rd and not mi.mem_wr:
+            return mi
+
+        name = OPCODE_NAMES.get((ir >> OPCODE_SHIFT) & OPCODE_MASK, "")
+        decoded: dict[str, Any] = {}
+
+        if mi.alu_exec and not mi.alu_op:
+            decoded["alu_op"] = _ALU_OPS.get(name, "ADD")
+
+        if mi.mem_rd or mi.mem_wr:
+            decoded["mem_byte"] = name in ("LB", "SB")
+
+        if name == "NOT":
+            decoded["b_sel"] = B_ZERO
+
+        return replace(mi, **decoded)
 
     def advance(self, ir: int) -> None:
-        self.seq.advance(ir)
+        """
+        MUX: select next AR value based on br_type from current uROM word.
+
+        br_type=0 → AR+1       (sequential)
+        br_type=1 → uROM.addr  (jump to microword)
+        br_type=2 → MAPPER     (dispatch: opcode → start address)
+        br_type=3 → 0          (back to FETCH)
+        """
+        mi = _UROM[self.ar]
+        if mi.halt:
+            return
+        if mi.br_type == 0:
+            self.ar += 1
+        elif mi.br_type == 1:
+            self.ar = mi.addr
+        elif mi.br_type == 2:
+            name = OPCODE_NAMES.get((ir >> OPCODE_SHIFT) & OPCODE_MASK, "")
+            fmt = _NAME_TO_FMT.get(name, "NOP")
+            self.ar = DISPATCH.get(fmt, DISPATCH["NOP"])
+        elif mi.br_type == 3:
+            self.ar = 0

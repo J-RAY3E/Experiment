@@ -135,10 +135,10 @@ class Machine:
             d_ctx = decode(ir)
             mnem = d_ctx["name"]
 
-            saved_upc = self.cp.seq.upc
-            self.cp.seq.upc = s["upc"]
-            mi = self.cp.seq.current_mi(ir)
-            self.cp.seq.upc = saved_upc
+            saved_upc = self.cp.upc
+            self.cp.upc = s["upc"]
+            mi = self.cp.current_mi(ir)
+            self.cp.upc = saved_upc
             sigs = []
             if mi.ir_we:
                 sigs.append("ir_we")
@@ -229,6 +229,7 @@ def main(target_prefix: str = "", input_path: str = "", limit: int = 200000) -> 
         if v:
             print(f"  {k:4}: {v} (0x{v:08X})")
     return None
+
 
 if __name__ == "__main__":
     main()

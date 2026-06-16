@@ -978,13 +978,13 @@ UPDATE_GOLDENS=1 pytest tests/test_golden.py -v
 
 | Тест                   | Описание                                                                                  | Файл                                |
 |------------------------|-------------------------------------------------------------------------------------------|--------------------------------------|
-| **hello**              | печатает `Hello, World!\n` через `print_str` с pstr-литералом                            | `golden/hello/test.yaml`             |
-| **cat**                | читает входной поток посимвольно через `LW` из `0xFFF0` и копирует в `OUT_PORT`         | `golden/cat/test.yaml`               |
-| **hello_user_name**    | запрос имени через prompt в pstr, чтение имени через `IN_PORT`, вывод приветствия        | `golden/hello_user_name/test.yaml`   |
-| **sort**               | чтение списка чисел из `IN_PORT` (через пробел/`\n`-разделители), сортировка, печать      | `golden/sort/test.yaml`              |
-| **double_precision**   | сложение `s0 + s2` (32 бит) с обнаружением carry через `BGTU`, вывод `2:1` (для `-1 + 2 + 1 + 0`) | `golden/double_precision/test.yaml`  |
-| **alg1**    | Project Euler №4 (наибольшее число-палиндром из произведения двух трёхзначных чисел) | `golden/alg1/test.yaml`             |
-| **vector_demo**        | vector-сложение двух массивов из 4 элементов через `VLD`/`VADD`/`VST`, печать результата | `golden/vector_demo/test.yaml`       |
+| **hello**              | печатает `Hello, World!\n` через `print_str` с pstr-литералом                            | `golden/hello_test.yaml`             |
+| **cat**                | читает входной поток посимвольно через `LW` из `0xFFF0` и копирует в `OUT_PORT`         | `golden/cat_test.yaml`               |
+| **hello_user_name**    | запрос имени через prompt в pstr, чтение имени через `IN_PORT`, вывод приветствия        | `golden/hello_user_name_test.yaml`   |
+| **sort**               | чтение списка чисел из `IN_PORT` (через пробел/`\n`-разделители), сортировка, печать      | `golden/sort_test.yaml`              |
+| **double_precision**   | сложение `s0 + s2` (32 бит) с обнаружением carry через `BGTU`, вывод `2:1` (для `-1 + 2 + 1 + 0`) | `golden/double_precision_test.yaml`  |
+| **alg1**    | Project Euler №4 (наибольшее число-палиндром из произведения двух трёхзначных чисел) | `golden/alg1_test.yaml`             |
+| **vector_demo**        | vector-сложение двух массивов из 4 элементов через `VLD`/`VADD`/`VST`, печать результата | `golden/vector_demo_test.yaml`       |
 
 ### Дополнительные алгоритмы в `examples/`
 
@@ -1045,7 +1045,7 @@ python -m src.machine out/hello.bin
 
 ```bash
 # Получить stdout для cat
-python -m src.translator golden/cat/test.yaml.in_source 2>/dev/null
+# (el formato cambió a golden/*_test.yaml, esto es solo referencia histórica)
 # (тесты запускаются через pytest, не напрямую)
 pytest tests/test_golden.py -v -k cat
 ```

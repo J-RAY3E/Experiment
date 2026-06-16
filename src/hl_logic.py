@@ -823,33 +823,33 @@ class HL:
         for o, c in self.strs:
             its.append((o, f'    .string "{"".join(esc.get(ch, ch) for ch in c)}"'))
         its.sort(key=lambda x: x[0])
-        lns = ["    .org 0", "    J main", "    .org 4", "data_start:"]
-        cur = 4
-        for ao, line in its:
-            addr = 4 + ao
-            if addr > cur:
-                lns.append(f"    .org {addr}")
-                cur = addr
-            lns.append(line)
-            if ".string" in line:
-                m = re.search(r'\.string "(.*)"', line)
+        lns = ["    .text 0", "    J main"]
+        if its:
+            lns.append("    .data 0")
+            lns.append("data_start:")
+            cur = 0
+            for ao, line in its:
+                if ao > cur:
+                    lns.append(f"    .org {ao}")
+                    cur = ao
+                lns.append(line)
+                m = re.search(r'\.string "(.*)"', line) if ".string" in line else None
                 if m:
-                    s_raw = m.group(1)
                     s_len = len(
-                        s_raw.replace("\\n", "\n")
+                        m.group(1)
+                        .replace("\\n", "\n")
                         .replace("\\t", "\t")
                         .replace("\\r", "\r")
                         .replace('\\"', '"')
                         .replace("\\\\", "\\")
                     )
                     cur += 4 + s_len
-            else:
-                cur += 4
-        code_base = 4 + self.do
-        if not its:
+                else:
+                    cur += 4
+        else:
+            lns.append("data_start:")
             lns.append("    .word 0  ; dummy")
-            code_base = 8
-        lns.append(f"    .org {code_base}")
+        lns.append("    .text 4")
         for ln in self.asm:
             lns.append(ln)
             if ln.strip() == "main:":
