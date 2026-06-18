@@ -35,7 +35,6 @@ KW = {"function", "let", "if", "else", "while", "halt", "true", "false", "return
 BI = {"print", "print_str", "print_num", "read", "readln", "vload", "vadd", "vstore", "len"}
 TREGS = ["t0", "t1", "t2", "t3", "t4", "t5", "t6"]
 VREGS = ["s0", "s1", "s2", "s3", "s4", "s5", "s6", "s7", "s8", "s9", "s10", "s11"]
-I12 = -2048, 2047
 
 
 class HL:
@@ -315,28 +314,41 @@ class HL:
     def em(self, ln=""):
         self.asm.append(("    " + ln) if ln else "")
 
+    I11 = -1024, 1023
+    I12 = -2048, 2047
+
     def vl(self, n):
         if n not in self.vars:
-            self.vars[n] = VREGS[len(self.vars)] if len(self.vars) < 12 else self.do
-            if isinstance(self.vars[n], int):
-                self.do += 4
+            self.vars[n] = self.do
+            self.do += 4
         return self.vars[n]
 
     def lv(self, n):
         loc = self.vl(n)
-        return loc if loc in VREGS else (r := self.ar(), self.em(f"LW {r}, gp, {loc}"), r)[2]
+        if self.I12[0] <= loc <= self.I12[1]:
+            r = self.ar()
+            self.em(f"LW {r}, gp, {loc}")
+            return r
+        tmp = self.ar()
+        self.li(loc, tmp)
+        self.em(f"ADD {tmp}, gp, {tmp}")
+        r = self.ar()
+        self.em(f"LW {r}, {tmp}, 0")
+        return r
 
     def sv(self, n, r):
         loc = self.vl(n)
-        if loc in VREGS:
-            if loc != r:
-                self.em(f"MV {loc}, {r}")
-        else:
+        if self.I11[0] <= loc <= self.I11[1]:
             self.em(f"SW {r}, gp, {loc}")
+        else:
+            tmp = self.ar()
+            self.li(loc, tmp)
+            self.em(f"ADD {tmp}, gp, {tmp}")
+            self.em(f"SW {r}, {tmp}, 0")
 
     def li(self, v, r=None):
         rr = r or self.ar()
-        if I12[0] <= v <= I12[1]:
+        if self.I12[0] <= v <= self.I12[1]:
             self.em(f"ADDI {rr}, zero, {v}")
         else:
             lo = v & 0xFFF
@@ -368,27 +380,15 @@ class HL:
             if i >= 8:
                 break
             self.sv(p, f"a{i}")
-        var_count_before = len(self.vars)
         for s in f.body:
             self._gs(s)
-        new_var_count = len(self.vars) - var_count_before
-        sreg_start = min(var_count_before, len(VREGS))
-        sreg_end = min(var_count_before + new_var_count, len(VREGS))
-        used_sregs = sreg_end - sreg_start
         if not is_main:
-            save_count = 1 + used_sregs
-            stack_bytes = save_count * 4
-            prologue = [
-                f"    ADDI sp, sp, -{stack_bytes}",
+            body_asm[1:1] = [
+                "    ADDI sp, sp, -4",
                 "    SW ra, sp, 0",
             ]
-            for i in range(used_sregs):
-                prologue.append(f"    SW {VREGS[sreg_start + i]}, sp, {(i + 1) * 4}")
-            body_asm[1:1] = prologue
-            for i in range(used_sregs - 1, -1, -1):
-                body_asm.append(f"    LW {VREGS[sreg_start + i]}, sp, {(i + 1) * 4}")
             body_asm.append("    LW ra, sp, 0")
-            body_asm.append(f"    ADDI sp, sp, {stack_bytes}")
+            body_asm.append("    ADDI sp, sp, 4")
             body_asm.append("    JR ra")
         elif not body_asm or body_asm[-1].strip() != "HALT":
             body_asm.append("    HALT")
@@ -792,13 +792,13 @@ class HL:
             return ops.get(op, 0)
         if op in ("<", ">", "<=", ">=", "==", "!="):
             return (op, self.er(left), self.er(right))
-        if isinstance(right, int) and I12[0] <= right <= I12[1]:
+        if isinstance(right, int) and self.I12[0] <= right <= self.I12[1]:
             lr = self.er(left)
             res = target_reg or self.ar()
             if op == "+":
                 self.em(f"ADDI {res}, {lr}, {right}")
                 return res
-            if op == "-" and I12[0] <= -right <= I12[1]:
+            if op == "-" and self.I12[0] <= -right <= self.I12[1]:
                 self.em(f"ADDI {res}, {lr}, {-right}")
                 return res
             if op in ("&", "|", "^", "<<", ">>"):

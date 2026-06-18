@@ -22,11 +22,9 @@ def _cmd_compile(args: argparse.Namespace) -> int:
     target_prefix = str(args.output.with_suffix(""))
     return translator_main(str(asm_tmp), target_prefix)
 
-
 def _cmd_asm(args: argparse.Namespace) -> int:
     target_prefix = str(args.output.with_suffix(""))
     return translator_main(str(args.input), target_prefix)
-
 
 def _cmd_run(args: argparse.Namespace) -> int:
     target_prefix = str(args.binary.with_suffix(""))
@@ -40,10 +38,8 @@ def _cmd_run(args: argparse.Namespace) -> int:
         print(f"Output:\n{out!r}")
     return 0
 
-
 def _to_path(value: str) -> Path:
     return Path(value)
-
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="src.cli", description="RISC-IV lab CLI")
@@ -67,11 +63,9 @@ def build_parser() -> argparse.ArgumentParser:
 
     return parser
 
-
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     return int(args.func(args))
-
 
 if __name__ == "__main__":
     sys.exit(main())

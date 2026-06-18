@@ -31,19 +31,15 @@ BYTE_SIGN = 0x80
 SHIFT_MASK = 0x1F
 SIGN_EXT_NEG = ~0x7FFFFFFF
 
-
 def _to_signed(v: int) -> int:
     return v if not (v & SIGN_BIT) else v | SIGN_EXT_NEG
 
-
 class BranchComparator:
-    """Evaluating conditions between two register values."""
 
     def evaluate(self, r1: int, r2: int) -> dict[str, bool]:
         u1, u2 = r1 & WORD_MASK, r2 & WORD_MASK
         s1, s2 = _to_signed(r1), _to_signed(r2)
         return {"eq": u1 == u2, "lt": s1 < s2, "ltu": u1 < u2}
-
 
 class RegisterFile:
     def __init__(self) -> None:
@@ -55,7 +51,6 @@ class RegisterFile:
     def write(self, addr: int, value: int) -> None:
         if addr != 0:
             self.regs[addr] = value & WORD_MASK
-
 
 class VectorRegisterFile:
     def __init__(self) -> None:
@@ -71,9 +66,7 @@ class VectorRegisterFile:
         else:
             self.regs[idx] = [v & WORD_MASK for v in values]
 
-
 class ALU:
-    """Unidad Aritmético-Lógica con despacho profesional de operaciones."""
 
     def execute(self, op: str, a: int, b: int) -> int:
         val_a = a & WORD_MASK
@@ -111,7 +104,6 @@ class ALU:
             return 1 if _to_signed(val_a) < _to_signed(val_b) else 0
 
         return 0
-
 
 class DataMemory:
     def __init__(self, size: int = DATA_MEM_SIZE) -> None:
@@ -154,7 +146,6 @@ class DataMemory:
                 self._write_output(value & BYTE_MASK)
         elif 0 <= addr < len(self.mem):
             self.mem[addr] = value & 0xFF
-
 
 class DataPath:
     def __init__(self, input_stream: str = "") -> None:

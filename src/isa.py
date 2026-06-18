@@ -143,14 +143,11 @@ R_ILV_FORMAT = R_IL_FORMAT | V_FORMAT
 
 HALT_WORD = OPCODES["HALT"] << OPCODE_SHIFT
 
-
 def _sext11(imm: int) -> int:
     return imm | ~IMM11_MASK if imm & IMM11_SIGN else imm
 
-
 def _sext12(imm: int) -> int:
     return imm | ~IMM12_MASK if imm & IMM12_SIGN else imm
-
 
 def decode(word: int) -> dict[str, Any]:
     op = (word >> OPCODE_SHIFT) & OPCODE_MASK
@@ -171,7 +168,6 @@ def decode(word: int) -> dict[str, Any]:
         "imm_u21": word & IMM21_MASK,
         "imm_u26": word & IMM26_MASK,
     }
-
 
 def encode(opcode: int, rd: int = 0, rs1: int = 0, rs2: int = 0, imm: int = 0) -> int:
     name = OPCODE_NAMES.get(opcode, "")

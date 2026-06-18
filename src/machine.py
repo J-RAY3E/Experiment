@@ -10,13 +10,6 @@ from src.isa import REG, REG_NAMES, STACK_BASE, decode
 
 
 def load_binary(bin_path: str, lst_path: str | None = None) -> tuple[list[int], dict[int, int], int]:
-    """Load a binary file into instruction and data byte maps.
-
-    Returns:
-        instr_words: instruction memory (list indexed by word address)
-        data_map:    data memory map {byte_address: byte_value}
-        data_base:   base address of data section (for gp register)
-    """
     instr_words: list[int] = []
     data_map: dict[int, int] = {}
     data_base: int = 0
@@ -63,14 +56,7 @@ def load_binary(bin_path: str, lst_path: str | None = None) -> tuple[list[int], 
 
     return instr_words, data_map, data_base
 
-
 class Machine:
-    """
-    RISC-IV processor simulator.
-
-    tick-accurate: each call to tick() advances the machine by exactly one
-    micro-step (one µROM entry).  The journal records every micro-step.
-    """
 
     def __init__(self, bin_path: str, lst_path: str | None = None, input_text: str = "") -> None:
         instr_words, data_map, data_base = load_binary(bin_path, lst_path)
@@ -191,7 +177,6 @@ class Machine:
         with open(target_prefix + ".mem.hex", "w", encoding="utf-8") as f:
             f.write(mem_hex + "\n" if mem_hex else "\n")
 
-
 def main(target_prefix: str = "", input_path: str = "", limit: int = 200000) -> str | None:
     if target_prefix:
         bin_path = target_prefix + ".bin"
@@ -229,7 +214,6 @@ def main(target_prefix: str = "", input_path: str = "", limit: int = 200000) -> 
         if v:
             print(f"  {k:4}: {v} (0x{v:08X})")
     return None
-
 
 if __name__ == "__main__":
     main()

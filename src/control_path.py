@@ -20,7 +20,6 @@ REG_IMM_SHL11: int = 4
 REG_IMM_U26: int = 5
 REG_IMM_U21: int = 6
 
-
 @dataclass
 class MI:
     ir_we: bool = False
@@ -99,7 +98,6 @@ class MI:
 
     br_type: int = 3
     addr: int = 0
-
 
 OPCODE_FORMATS: dict[str, set[str]] = {
     "R": {
@@ -251,7 +249,6 @@ DISPATCH = {
     "VST": 16,
 }
 
-
 class ControlPath:
     def __init__(self) -> None:
         self.ar: int = 0
@@ -273,7 +270,6 @@ class ControlPath:
         self.ar = value
 
     def current_mi(self, ir: int) -> MI:
-        """Read uROM at AR, then decode variable signals from instruction opcode."""
         mi = _UROM[self.ar]
         if not mi.alu_exec and not mi.mem_rd and not mi.mem_wr:
             return mi
@@ -293,14 +289,6 @@ class ControlPath:
         return replace(mi, **decoded)
 
     def advance(self, ir: int) -> None:
-        """
-        MUX: select next AR value based on br_type from current uROM word.
-
-        br_type=0 → AR+1       (sequential)
-        br_type=1 → uROM.addr  (jump to microword)
-        br_type=2 → MAPPER     (dispatch: opcode → start address)
-        br_type=3 → 0          (back to FETCH)
-        """
         mi = _UROM[self.ar]
         if mi.halt:
             return
