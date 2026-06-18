@@ -1,9 +1,9 @@
-    .org 0
+    .text 0
     J main
-    .org 4
+    .data 0
 data_start:
     .string "Hello, World!\n"
-    .org 22
+    .text 4
     main:
     ADDI gp, zero, data_start
     LUI t4, 0

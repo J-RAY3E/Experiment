@@ -1,6 +1,6 @@
-    .org 0
+    .text 0
     J main
-    .org 4
+    .data 0
 data_start:
     .word 1  ; a[0]
     .word 2  ; a[1]
@@ -10,16 +10,20 @@ data_start:
     .word 20  ; b[1]
     .word 30  ; b[2]
     .word 40  ; b[3]
+    .org 36
     .word 0  ; c[0]
     .word 0  ; c[1]
     .word 0  ; c[2]
     .word 0  ; c[3]
-    .org 52
+    .word 0  ; i
+    .word 0  ; tens
+    .word 0  ; ones
+    .text 4
     main:
     ADDI gp, zero, data_start
     ADDI t0, gp, 0
     ADDI t1, gp, 16
-    ADDI t2, gp, 32
+    ADDI t2, gp, 36
     ADDI t3, zero, 1
     vh_1:
     VLD V0, [t0+0]
@@ -31,39 +35,48 @@ data_start:
     ADDI t2, t2, 16
     ADDI t3, t3, -1
     BNE t3, zero, vh_1
-    MV s3, zero
+    SW zero, gp, 52
     wc_2:
-    ADDI t4, zero, 4
-    BGE s3, t4, en_3
-    SLLI t5, s3, 2
-    ADDI t5, t5, 32
-    ADD t5, t5, gp
-    LW t6, t5, 0
-    ADDI t0, zero, 10
-    DIV s4, t6, t0
-    SLLI t1, s3, 2
-    ADDI t1, t1, 32
-    ADD t1, t1, gp
-    LW t2, t1, 0
+    LW t4, gp, 52
+    ADDI t5, zero, 4
+    BGE t4, t5, en_3
+    LW t6, gp, 52
+    SLLI t0, t6, 2
+    ADDI t0, t0, 36
+    ADD t0, t0, gp
+    LW t1, t0, 0
     ADDI t3, zero, 10
-    REM s5, t2, t3
+    DIV t4, t1, t3
+    SW t4, gp, 56
+    LW t5, gp, 52
+    SLLI t6, t5, 2
+    ADDI t6, t6, 36
+    ADD t6, t6, gp
+    LW t0, t6, 0
+    ADDI t2, zero, 10
+    REM t3, t0, t2
+    SW t3, gp, 60
     LUI t4, 0
     ADDI t4, t4, -12
-    ADDI t5, s4, 48
-    SW t5, t4, 0
-    LUI t6, 0
-    ADDI t6, t6, -12
-    ADDI t0, s5, 48
-    SW t0, t6, 0
-    LUI t1, 0
-    ADDI t1, t1, -12
-    ADDI t2, zero, 32
-    SW t2, t1, 0
-    ADDI s3, s3, 1
-    J wc_2
-    en_3:
+    LW t5, gp, 56
+    ADDI t6, t5, 48
+    SW t6, t4, 0
+    LUI t0, 0
+    ADDI t0, t0, -12
+    LW t1, gp, 60
+    ADDI t2, t1, 48
+    SW t2, t0, 0
     LUI t3, 0
     ADDI t3, t3, -12
-    ADDI t4, zero, 10
+    ADDI t4, zero, 32
     SW t4, t3, 0
+    LW t5, gp, 52
+    ADDI t6, t5, 1
+    SW t6, gp, 52
+    J wc_2
+    en_3:
+    LUI t0, 0
+    ADDI t0, t0, -12
+    ADDI t1, zero, 10
+    SW t1, t0, 0
     HALT

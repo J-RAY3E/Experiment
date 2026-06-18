@@ -1,20 +1,28 @@
-    .org 0
+    .text 0
     J main
-    .org 4
+    .data 0
 data_start:
-    .word 0  ; dummy
-    .org 8
+    .word 0  ; a
+    .word 0  ; b
+    .word 0  ; c
+    .text 4
     main:
     ADDI gp, zero, data_start
-    ADDI s0, zero, 10
-    ADDI s1, zero, 20
-    ADD s2, s0, s1
-    LUI t0, 0
-    ADDI t0, t0, -12
-    ADDI t1, s2, 48
-    SW t1, t0, 0
-    LUI t2, 0
-    ADDI t2, t2, -12
-    ADDI t3, zero, 10
-    SW t3, t2, 0
+    ADDI t0, zero, 10
+    SW t0, gp, 0
+    ADDI t1, zero, 20
+    SW t1, gp, 4
+    LW t2, gp, 0
+    LW t3, gp, 4
+    ADD t4, t2, t3
+    SW t4, gp, 8
+    LUI t5, 0
+    ADDI t5, t5, -12
+    LW t6, gp, 8
+    ADDI t0, t6, 48
+    SW t0, t5, 0
+    LUI t1, 0
+    ADDI t1, t1, -12
+    ADDI t2, zero, 10
+    SW t2, t1, 0
     HALT
