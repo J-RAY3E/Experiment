@@ -1,9 +1,8 @@
-    .text 0
-    J main
     .data 0
 data_start:
     .word 0  ; i
-    .text 4
+    .text 0
+    J main
     main:
     ADDI gp, zero, data_start
     SW zero, gp, 0

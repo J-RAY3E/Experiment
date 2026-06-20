@@ -143,11 +143,14 @@ R_ILV_FORMAT = R_IL_FORMAT | V_FORMAT
 
 HALT_WORD = OPCODES["HALT"] << OPCODE_SHIFT
 
+
 def _sext11(imm: int) -> int:
     return imm | ~IMM11_MASK if imm & IMM11_SIGN else imm
 
+
 def _sext12(imm: int) -> int:
     return imm | ~IMM12_MASK if imm & IMM12_SIGN else imm
+
 
 def decode(word: int) -> dict[str, Any]:
     op = (word >> OPCODE_SHIFT) & OPCODE_MASK
@@ -169,6 +172,7 @@ def decode(word: int) -> dict[str, Any]:
         "imm_u26": word & IMM26_MASK,
     }
 
+
 def encode(opcode: int, rd: int = 0, rs1: int = 0, rs2: int = 0, imm: int = 0) -> int:
     name = OPCODE_NAMES.get(opcode, "")
     s1 = (rd & REG_MASK) << RD_SHIFT
@@ -182,7 +186,10 @@ def encode(opcode: int, rd: int = 0, rs1: int = 0, rs2: int = 0, imm: int = 0) -
         if name == "NOP":
             return 0
         return (opcode << OPCODE_SHIFT) | s1 | s2 | s3
-    if name in I_FORMAT | L_FORMAT | VL_FORMAT | S_FORMAT:
+    if name in I_FORMAT | L_FORMAT | VL_FORMAT:
+        im = imm & IMM12_MASK
+        return (opcode << OPCODE_SHIFT) | s1 | s2 | im
+    if name in S_FORMAT:
         return (opcode << OPCODE_SHIFT) | s1 | s2 | im
     if name in B_FORMAT:
         return (opcode << OPCODE_SHIFT) | s2 | s3 | im
@@ -191,7 +198,7 @@ def encode(opcode: int, rd: int = 0, rs1: int = 0, rs2: int = 0, imm: int = 0) -
     if name in J_FORMAT:
         return (opcode << OPCODE_SHIFT) | (imm & IMM26_MASK)
     if name == "JR":
-        return (opcode << OPCODE_SHIFT) | s1
+        return (opcode << OPCODE_SHIFT) | s2
     if name == "HALT":
         return HALT_WORD
     return (opcode << OPCODE_SHIFT) | s1 | s2 | s3 | im

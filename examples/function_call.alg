@@ -6,6 +6,7 @@ function double(n) {
 function main() {
     let x = 21;
     let y = double(x);
-    print(y);
+    print_num(y);
+    print(10);
     halt;
 }

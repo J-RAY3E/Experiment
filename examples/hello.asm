@@ -1,9 +1,8 @@
-    .text 0
-    J main
     .data 0
 data_start:
     .string "Hello, World!\n"
-    .text 4
+    .text 0
+    J main
     main:
     ADDI gp, zero, data_start
     LUI t4, 0

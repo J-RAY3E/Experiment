@@ -1,11 +1,10 @@
-    .text 0
-    J main
     .data 0
 data_start:
     .word 0  ; a
     .word 0  ; b
     .word 0  ; c
-    .text 4
+    .text 0
+    J main
     main:
     ADDI gp, zero, data_start
     ADDI t0, zero, 10

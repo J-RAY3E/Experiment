@@ -440,7 +440,7 @@ class HL:
                     else:
                         vr = self.er(v)
                         ar = self.ar()
-                        self.em(f"ADDI {ar}, gp, {o + i}")
+                        self.em(f"ADDI {ar}, gp, {o + i * 4}")
                         self.em(f"SW {vr}, {ar}, 0")
             elif iv is not None:
                 r = self.ge(iv)
@@ -454,15 +454,15 @@ class HL:
             self.arrays[n] = (o, sz)
             self.vars[n] = ("arr", o, sz)
             return
-        loc = self.vl(n)
-        tg = loc if loc in VREGS else None
+        self.vl(n)
         if iv is not None:
-            r = self.ge(iv, target_reg=tg)
+            r = self.ge(iv)
             if isinstance(r, tuple) and r and r[0] == "arr":
-                self.arrays[n] = (r[1], r[2])
+                off, sz = r[1], r[2]
+                self.arrays[n] = (off, sz)
                 self.vars[n] = r
-            elif r != tg:
-                self.sv(n, self.er(r, target_reg=tg))
+            else:
+                self.sv(n, self.er(r))
 
     def _ga(self, s):
         if s.name in self.arrays:
@@ -471,11 +471,8 @@ class HL:
                 self.arrays[s.name] = (r[1], r[2])
                 self.vars[s.name] = r
             return
-        loc = self.vl(s.name)
-        tg = loc if loc in VREGS else None
-        r = self.ge(s.value, target_reg=tg)
-        if r != tg:
-            self.sv(s.name, self.er(r, target_reg=tg))
+        self.vl(s.name)
+        self.sv(s.name, self.er(self.ge(s.value)))
 
     def _gia(self, s):
         tg = s.target
@@ -643,7 +640,7 @@ class HL:
             if e.op == "-":
                 self.em(f"SUB {r}, zero, {self.er(ev)}")
             else:
-                self.em(f"XORI {r}, {self.er(ev)}, -1")
+                self.em(f"XORI {r}, {self.er(ev)}, 1")
             return r
         if isinstance(e, BinaryOp):
             return self._eb(e.op, self.ge(e.left), self.ge(e.right), target_reg)
@@ -806,6 +803,12 @@ class HL:
                 return res
         lr, rr = self.er(left), self.er(right)
         res = target_reg or self.ar()
+        if op == "||":
+            self.em(f"OR {res}, {lr}, {rr}")
+            return res
+        if op == "&&":
+            self.em(f"AND {res}, {lr}, {rr}")
+            return res
         if op in BM:
             self.em(f"{BM[op]} {res}, {lr}, {rr}")
         return res
@@ -823,10 +826,8 @@ class HL:
         for o, c in self.strs:
             its.append((o, f'    .string "{"".join(esc.get(ch, ch) for ch in c)}"'))
         its.sort(key=lambda x: x[0])
-        lns = ["    .text 0", "    J main"]
+        lns = ["    .data 0", "data_start:"]
         if its:
-            lns.append("    .data 0")
-            lns.append("data_start:")
             cur = 0
             for ao, line in its:
                 if ao > cur:
@@ -847,9 +848,9 @@ class HL:
                 else:
                     cur += 4
         else:
-            lns.append("data_start:")
             lns.append("    .word 0  ; dummy")
-        lns.append("    .text 4")
+        lns.append("    .text 0")
+        lns.append("    J main")
         for ln in self.asm:
             lns.append(ln)
             if ln.strip() == "main:":

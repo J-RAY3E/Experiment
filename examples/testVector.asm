@@ -1,5 +1,3 @@
-    .text 0
-    J main
     .data 0
 data_start:
     .word 1  ; a[0]
@@ -18,7 +16,8 @@ data_start:
     .word 0  ; i
     .word 0  ; tens
     .word 0  ; ones
-    .text 4
+    .text 0
+    J main
     main:
     ADDI gp, zero, data_start
     ADDI t0, gp, 0

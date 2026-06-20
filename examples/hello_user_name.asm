@@ -1,5 +1,3 @@
-    .text 0
-    J main
     .data 0
 data_start:
     .word 0  ; name[0]
@@ -265,7 +263,8 @@ data_start:
     .string "Hello, "
     .word 0  ; j
     .string "!\n"
-    .text 4
+    .text 0
+    J main
     main:
     ADDI gp, zero, data_start
     ADDI t0, zero, 1024
