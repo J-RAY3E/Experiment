@@ -3,29 +3,6 @@ from __future__ import annotations
 import re
 from typing import Any
 
-from src.ast_nodes import (
-    ArrayLiteral,
-    AssignStmt,
-    BinaryOp,
-    BlockStmt,
-    BoolLiteral,
-    CallExpr,
-    CharLiteral,
-    ExprStmt,
-    FunctionDef,
-    HaltStmt,
-    IfStmt,
-    IndexAssignStmt,
-    IndexExpr,
-    IntLiteral,
-    LetStmt,
-    Program,
-    ReturnStmt,
-    StringLiteral,
-    UnaryOp,
-    VarRef,
-    WhileStmt,
-)
 from src.isa import IMM20_MASK, IN_PORT, OUT_PORT
 
 PREC = [{"||"}, {"&&"}, {"|"}, {"^"}, {"&"}, {"==", "!="}, {"<", ">", "<=", ">="}, {"<<", ">>"}, {"+", "-"}, {"*", "/", "%"}]
@@ -46,6 +23,7 @@ class HL:
         self.asm = []
         self.nr = 0
         self.nv = 0
+        self.sc_nest = 0
         self.dl = []
         self.strs = []
         self.dv = {}
@@ -139,10 +117,13 @@ class HL:
                 self.exp("{")
                 b = self._stmts("}")
                 self.exp("}")
-                fs.append(FunctionDef(n, b, params))
+                fd = {"function": n, "body": b}
+                if params:
+                    fd["params"] = params
+                fs.append(fd)
             else:
                 self.adv()
-        self.ast = Program(fs)
+        self.ast = {"program": fs}
         return self.ast
 
     def _stmts(self, e):
@@ -168,7 +149,12 @@ class HL:
                 self.adv()
                 iv = self.pexpr()
             self.exp(";")
-            return LetStmt(n, iv, sz)
+            d = {"let": n}
+            if iv is not None:
+                d["init"] = iv
+            if sz is not None:
+                d["array_size"] = sz
+            return d
         if t == ("K", "if"):
             return self._ifwhile("if")
         if t == ("K", "while"):
@@ -176,22 +162,22 @@ class HL:
         if t == ("K", "halt"):
             self.adv()
             self.exp(";")
-            return HaltStmt()
+            return {"halt": True}
         if t == ("K", "return"):
             self.adv()
             v = self.pexpr() if self.peek()[1] != ";" else None
             self.exp(";")
-            return ReturnStmt(v)
+            return {"return": v}
         if t[0] == "S" and t[1] == "{":
             self.adv()
             b = self._stmts("}")
             self.exp("}")
-            return BlockStmt(b)
+            return {"block": b}
         if t[0] == "B":
             n = self.adv()[1]
             a = self.args()
             self.exp(";")
-            return ExprStmt(CallExpr(n, a))
+            return {"expr_stmt": {"call": n, "args": a}}
         if t[0] == "S" and t[1] == ";":
             self.adv()
             return None
@@ -203,31 +189,33 @@ class HL:
         c = self.pexpr()
         self.exp(")")
         b = self._stmt()
-        bl = [b] if not isinstance(b, BlockStmt) else b.body
+        bl = [b] if not ("block" in b) else b["block"]
         if k == "while":
-            return WhileStmt(c, bl)
+            return {"while": c, "body": bl}
         el = None
         if self.peek() == ("K", "else"):
             self.adv()
             eb = self._stmt()
-            el = [eb] if not isinstance(eb, BlockStmt) else eb.body
-        return IfStmt(c, bl, el)
+            el = [eb] if not ("block" in eb) else eb["block"]
+        return {"if": c, "then": bl, "else": el} if el else {"if": c, "then": bl}
 
     def _assign(self):
         n = self.adv()[1]
         if self.peek()[1] == "(":
             a = self.args()
             self.exp(";")
-            return ExprStmt(CallExpr(n, a))
-        tg: Any = VarRef(n)
+            return {"expr_stmt": {"call": n, "args": a}}
+        tg = {"var": n}
         while self.peek()[1] == "[":
             self.adv()
-            tg = IndexExpr(tg, self.pexpr())
+            tg = {"index": tg, "at": self.pexpr()}
             self.exp("]")
         self.exp("=")
         v = self.pexpr()
         self.exp(";")
-        return AssignStmt(n, v) if isinstance(tg, VarRef) else IndexAssignStmt(tg, v)
+        if "var" in tg:
+            return {"assign": n, "value": v}
+        return {"index_assign": tg, "value": v}
 
     def pexpr(self, mp=0):
         res = self._prim()
@@ -239,19 +227,19 @@ class HL:
             if p < 0 or p < mp:
                 break
             self.adv()
-            res = BinaryOp(t[1], res, self.pexpr(p + 1))
+            res = {"binop": t[1], "left": res, "right": self.pexpr(p + 1)}
         return res
 
     def _prim(self):
         t = self.adv()
         if t[0] in ("N", "H"):
-            return IntLiteral(t[1])
+            return {"int": t[1]}
         if t[0] == "C":
-            return CharLiteral(t[1])
+            return {"char": t[1]}
         if t[0] == "K" and t[1] in ("true", "false"):
-            return BoolLiteral(t[1] == "true")
+            return {"bool": t[1] == "true"}
         if t[0] == "STR":
-            return StringLiteral(t[1])
+            return {"string": t[1]}
         if t[0] == "S" and t[1] == "{":
             e = []
             if self.peek()[1] != "}":
@@ -260,17 +248,17 @@ class HL:
                     self.adv()
                     e.append(self.pexpr())
             self.exp("}")
-            return ArrayLiteral(e)
+            return {"array": e}
         if t[0] in ("I", "B"):
             if self.peek()[1] == "(":
                 f = t[1]
                 a = self.args()
-                return CallExpr(f, a)
+                return {"call": f, "args": a}
             if t[0] == "I":
-                n2: Any = VarRef(t[1])
+                n2 = {"var": t[1]}
                 while self.peek()[1] == "[":
                     self.adv()
-                    n2 = IndexExpr(n2, self.pexpr())
+                    n2 = {"index": n2, "at": self.pexpr()}
                     self.exp("]")
                 return n2
             raise SyntaxError(f"unexpected builtin {t} at {self.pos}")
@@ -279,7 +267,7 @@ class HL:
             self.exp(")")
             return e
         if t[0] == "O" and t[1] in ("-", "~", "!"):
-            return UnaryOp(t[1], self.pexpr(len(PREC)))
+            return {"unary": t[1], "operand": self.pexpr(len(PREC))}
         raise SyntaxError(f"unexpected token {t} at {self.pos}")
 
     def gen(self, a):
@@ -289,11 +277,12 @@ class HL:
         self.asm = []
         self.nr = 0
         self.nv = 0
+        self.sc_nest = 0
         self.dl = []
         self.strs = []
         self.dv = {}
         self.arrays = {}
-        for f in a.functions:
+        for f in a["program"]:
             self._gfunc(f)
         return self._fin()
 
@@ -367,20 +356,20 @@ class HL:
         return o
 
     def _gfunc(self, f):
-        is_main = f.name == "main"
+        is_main = f["function"] == "main"
         body_asm: list[str] = []
         saved_asm = self.asm
         self.asm = body_asm
-        self.em(f"{f.name}:")
-        for i, p in enumerate(f.params):
+        self.em(f"{f['function']}:")
+        for i, p in enumerate(f.get("params", [])):
             if i >= 8:
                 break
             self.vl(p)
-        for i, p in enumerate(f.params):
+        for i, p in enumerate(f.get("params", [])):
             if i >= 8:
                 break
             self.sv(p, f"a{i}")
-        for s in f.body:
+        for s in f["body"]:
             self._gs(s)
         if not is_main:
             body_asm[1:1] = [
@@ -394,44 +383,43 @@ class HL:
             body_asm.append("    HALT")
         self.asm = saved_asm
         self.asm.extend(body_asm)
-        self.dl.append(f.name)
+        self.dl.append(f["function"])
 
     def _gs(self, s):
-        t = type(s)
-        if t is LetStmt:
+        if "let" in s:
             self._gl(s)
-        elif t is AssignStmt:
+        elif "assign" in s:
             self._ga(s)
-        elif t is IndexAssignStmt:
+        elif "index_assign" in s:
             self._gia(s)
-        elif t is IfStmt:
-            self._gc("if", s.cond, s.then_body, getattr(s, "else_body", None))
-        elif t is WhileStmt:
-            self._gc("while", s.cond, s.body, None)
-        elif t is ReturnStmt:
-            if s.value is not None:
-                self.em(f"MV a0, {self.er(self.ge(s.value))}")
-        elif t is ExprStmt:
+        elif "if" in s:
+            self._gc("if", s["if"], s["then"], s.get("else"))
+        elif "while" in s:
+            self._gc("while", s["while"], s["body"], None)
+        elif "return" in s:
+            if s["return"] is not None:
+                self.em(f"MV a0, {self.er(self.ge(s['return']))}")
+        elif "expr_stmt" in s:
             self._ges(s)
-        elif t is BlockStmt:
-            for x in s.body:
+        elif "block" in s:
+            for x in s["body"]:
                 self._gs(x)
-        elif t is HaltStmt:
+        elif "halt" in s:
             self.em("HALT")
 
     def _gl(self, s):
-        n = s.name
-        iv = s.init
-        if s.array_size is not None or isinstance(iv, ArrayLiteral):
+        n = s["let"]
+        iv = s.get("init")
+        if s.get("array_size") is not None or (isinstance(iv, dict) and "array" in iv):
             sz = (
-                s.array_size.value
-                if s.array_size is not None and isinstance(s.array_size, IntLiteral)
-                else (len(iv.elements) if isinstance(iv, ArrayLiteral) else 4)
+                s["array_size"]["int"]
+                if s.get("array_size") and isinstance(s["array_size"], dict) and "int" in s["array_size"]
+                else (len(iv["array"]) if isinstance(iv, dict) and "array" in iv else 4)
             )
             o = self.do
             self.do += sz * 4
-            if isinstance(iv, ArrayLiteral):
-                for i, el in enumerate(iv.elements):
+            if isinstance(iv, dict) and "array" in iv:
+                for i, el in enumerate(iv["array"]):
                     if i >= sz:
                         break
                     v = self.ge(el)
@@ -465,25 +453,26 @@ class HL:
                 self.sv(n, self.er(r))
 
     def _ga(self, s):
-        if s.name in self.arrays:
-            r = self.ge(s.value)
+        n = s["assign"]
+        if n in self.arrays:
+            r = self.ge(s["value"])
             if isinstance(r, tuple) and r and r[0] == "arr":
-                self.arrays[s.name] = (r[1], r[2])
-                self.vars[s.name] = r
+                self.arrays[n] = (r[1], r[2])
+                self.vars[n] = r
             return
-        self.vl(s.name)
-        self.sv(s.name, self.er(self.ge(s.value)))
+        self.vl(n)
+        self.sv(n, self.er(self.ge(s["value"])))
 
     def _gia(self, s):
-        tg = s.target
-        if not isinstance(tg, IndexExpr):
+        tg = s["index_assign"]
+        if not ("index" in tg):
             return
-        bl = self._la(tg.array)
+        bl = self._la(tg["index"])
         if bl is None:
             return
         o, _n = bl
-        vr = self.er(self.ge(s.value))
-        ir = self.er(self.ge(tg.index))
+        vr = self.er(self.ge(s["value"]))
+        ir = self.er(self.ge(tg["at"]))
         ar = self.ar()
         self.em(f"SLLI {ar}, {ir}, 2")
         self.em(f"ADDI {ar}, {ar}, {o}")
@@ -491,18 +480,19 @@ class HL:
         self.em(f"SW {vr}, {ar}, 0")
 
     def _la(self, n):
-        if isinstance(n, VarRef) and n.name in self.arrays:
-            return self.arrays[n.name]
-        if isinstance(n, IndexExpr):
-            return self._la(n.array)
+        if isinstance(n, dict) and "var" in n and n["var"] in self.arrays:
+            return self.arrays[n["var"]]
+        if isinstance(n, dict) and "index" in n:
+            return self._la(n["index"])
         return None
 
-    def _ges(self, e):
-        x = e.expr
-        if isinstance(x, CallExpr) and x.name == "print_str":
-            if x.args and isinstance(x.args[0], (StringLiteral, VarRef)):
-                s = x.args[0].value if isinstance(x.args[0], StringLiteral) else x.args[0].name
-                so = self.als(s)
+    def _ges(self, s):
+        x = s["expr_stmt"]
+        if "call" in x and x["call"] == "print_str":
+            a0 = x["args"][0]
+            if "string" in a0 or "var" in a0:
+                sval = a0["string"] if "string" in a0 else a0["var"]
+                so = self.als(sval)
                 ba = self.ar()
                 le = self.ar()
                 i2 = self.ar()
@@ -523,9 +513,9 @@ class HL:
                 self.em(f"J {ls}")
                 self.em(f"{le2}:")
                 return
-        if isinstance(x, CallExpr) and x.name == "print_num":
-            if x.args:
-                val_orig = self.er(self.ge(x.args[0]))
+        if "call" in x and x["call"] == "print_num":
+            if x["args"]:
+                val_orig = self.er(self.ge(x["args"][0]))
                 val = self.ar()
                 self.em(f"MV {val}, {val_orig}")
                 div = self.ar()
@@ -551,18 +541,18 @@ class HL:
                 self.em(f"DIV {div}, {div}, {ten}")
                 self.em(f"BNE {div}, zero, {l3}")
                 return
-        if isinstance(x, CallExpr) and x.name == "print":
+        if "call" in x and x["call"] == "print":
             po = self.li(OUT_PORT)
-            for a in x.args:
+            for a in x["args"]:
                 self.em(f"SW {self.er(self.ge(a))}, {po}, 0")
             return
-        if isinstance(x, CallExpr) and x.name == "readln":
+        if "call" in x and x["call"] == "readln":
             self.em(f"LW {self.ar()}, {self.li(IN_PORT)}, 0")
             return
-        if isinstance(x, CallExpr) and x.name == "vstore":
-            o = self.ge(x.args[0])
-            idx = self.ge(x.args[1]) if len(x.args) > 2 else None
-            vv = self.ge(x.args[2] if len(x.args) > 2 else x.args[1])
+        if "call" in x and x["call"] == "vstore":
+            o = self.ge(x["args"][0])
+            idx = self.ge(x["args"][1]) if len(x["args"]) > 2 else None
+            vv = self.ge(x["args"][2] if len(x["args"]) > 2 else x["args"][1])
             ar = self.ar()
             if isinstance(o, tuple) and o[0] == "arr":
                 self.em(f"ADDI {ar}, gp, {o[1]}")
@@ -575,11 +565,11 @@ class HL:
             if isinstance(vv, tuple) and vv[0] == "v":
                 self.em(f"VST {vv[1]}, [{ar}+0]")
             return
-        if isinstance(x, CallExpr):
-            for i, a in enumerate(x.args):
+        if "call" in x:
+            for i, a in enumerate(x["args"]):
                 if i < 8:
                     self.em(f"MV a{i}, {self.er(self.ge(a))}")
-            self.em(f"JAL ra, {x.name}")
+            self.em(f"JAL ra, {x['call']}")
 
     def _gc(self, k, cond, body, eb):
         lc = self.ml("wc") if k == "while" else None
@@ -611,14 +601,20 @@ class HL:
             self.em(f"{le2}:")
 
     def ge(self, e, target_reg=None):
-        if isinstance(e, (IntLiteral, BoolLiteral, CharLiteral)):
-            return e.value if not isinstance(e, BoolLiteral) else (1 if e.value else 0)
-        if isinstance(e, IndexExpr):
-            bl = self._la(e.array)
+        if isinstance(e, int):
+            return e
+        if "int" in e:
+            return e["int"]
+        if "char" in e:
+            return e["char"]
+        if "bool" in e:
+            return 1 if e["bool"] else 0
+        if "index" in e:
+            bl = self._la(e["index"])
             if bl is None:
                 return 0
             o, _n = bl
-            ir = self.er(self.ge(e.index))
+            ir = self.er(self.ge(e["at"]))
             ar = self.ar()
             self.em(f"SLLI {ar}, {ir}, 2")
             self.em(f"ADDI {ar}, {ar}, {o}")
@@ -626,35 +622,60 @@ class HL:
             r = target_reg or self.ar()
             self.em(f"LW {r}, {ar}, 0")
             return r
-        if isinstance(e, VarRef):
-            if e.name in self.arrays:
-                o, n = self.arrays[e.name]
-                return ("arr", o, n)
-            v = self.lv(e.name)
+        if "var" in e:
+            n = e["var"]
+            if n in self.arrays:
+                o, n2 = self.arrays[n]
+                return ("arr", o, n2)
+            v = self.lv(n)
             if target_reg and target_reg != v:
                 self.em(f"MV {target_reg}, {v}")
             return target_reg if target_reg else v
-        if isinstance(e, UnaryOp):
-            ev = self.ge(e.operand)
+        if "unary" in e:
+            ev = self.ge(e["operand"])
             r = target_reg or self.ar()
-            if e.op == "-":
+            if e["unary"] == "-":
                 self.em(f"SUB {r}, zero, {self.er(ev)}")
             else:
                 self.em(f"XORI {r}, {self.er(ev)}, 1")
             return r
-        if isinstance(e, BinaryOp):
-            return self._eb(e.op, self.ge(e.left), self.ge(e.right), target_reg)
-        if isinstance(e, CallExpr) and e.name == "read":
+        if "binop" in e:
+            op = e["binop"]
+            if op in ("&&", "||"):
+                sr = f"s{self.sc_nest}"
+                self.sc_nest += 1
+                r = target_reg or self.ar()
+                lv = self.ge(e["left"])
+                self.em(f"MV {r}, {self.er(lv)}")
+                self.em(f"MV {sr}, {r}")
+                le = self.ml("sc")
+                if op == "&&":
+                    self.em(f"BEQ {sr}, zero, {le}")
+                else:
+                    self.em(f"BNE {sr}, zero, {le}")
+                rv = self.ge(e["right"])
+                self.sc_nest -= 1
+                if op == "&&":
+                    self.em(f"AND {sr}, {sr}, {self.er(rv)}")
+                else:
+                    self.em(f"OR {sr}, {sr}, {self.er(rv)}")
+                self.em(f"{le}:")
+                if target_reg and target_reg != sr:
+                    self.em(f"MV {target_reg}, {sr}")
+                    return target_reg
+                return sr
+            return self._eb(op, self.ge(e["left"]), self.ge(e["right"]), target_reg)
+        if "call" in e and e["call"] == "read":
             r = target_reg or self.ar()
             self.em(f"LW {r}, {self.li(IN_PORT)}, 0")
             return r
-        if isinstance(e, CallExpr) and e.name == "len":
-            if e.args and isinstance(e.args[0], VarRef) and e.args[0].name in self.arrays:
-                return self.arrays[e.args[0].name][1]
+        if "call" in e and e["call"] == "len":
+            if e["args"] and "var" in e["args"][0] and e["args"][0]["var"] in self.arrays:
+                return self.arrays[e["args"][0]["var"]][1]
             return 0
-        if isinstance(e, CallExpr) and e.name == "vload":
-            o = self.ge(e.args[0])
-            idx = self.ge(e.args[1]) if len(e.args) > 1 else None
+        if "call" in e and e["call"] == "vload":
+            o = self.ge(e["args"][0])
+            idx = self.ge(e["args"][1]) if len(e["args"]) > 1 else None
             vr = self.av()
             ar = self.ar()
             if isinstance(o, tuple) and o[0] == "arr":
@@ -667,19 +688,19 @@ class HL:
                 self.em(f"ADD {ar}, {ar}, {self.er(idx)}")
             self.em(f"VLD {vr}, [{ar}+0]")
             return ("v", vr)
-        if isinstance(e, CallExpr) and e.name == "vadd":
-            v1 = self.ge(e.args[0])
-            v2 = self.ge(e.args[1])
+        if "call" in e and e["call"] == "vadd":
+            v1 = self.ge(e["args"][0])
+            v2 = self.ge(e["args"][1])
             if isinstance(v1, tuple) and isinstance(v2, tuple):
                 vr = self.av()
                 self.em(f"VADD {vr}, {v1[1]}, {v2[1]}")
                 return ("v", vr)
             return 0
-        if isinstance(e, CallExpr):
-            for i, a in enumerate(e.args):
+        if "call" in e:
+            for i, a in enumerate(e["args"]):
                 if i < 8:
                     self.em(f"MV a{i}, {self.er(self.ge(a))}")
-            self.em(f"JAL ra, {e.name}")
+            self.em(f"JAL ra, {e['call']}")
             r = target_reg or self.ar()
             self.em(f"MV {r}, a0")
             return r
@@ -862,7 +883,7 @@ class HL:
 
     def dump_ast(self, s):
         self.parse(s)
-        return self.ast.to_dict() if self.ast else {}
+        return self.ast if self.ast else {}
 
     def get_ast(self):
         return self.ast
