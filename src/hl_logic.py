@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import re
-from typing import Any
 
 from src.isa import IMM20_MASK, IN_PORT, OUT_PORT
 
@@ -189,14 +188,14 @@ class HL:
         c = self.pexpr()
         self.exp(")")
         b = self._stmt()
-        bl = [b] if not ("block" in b) else b["block"]
+        bl = [b] if "block" not in b else b["block"]
         if k == "while":
             return {"while": c, "body": bl}
         el = None
         if self.peek() == ("K", "else"):
             self.adv()
             eb = self._stmt()
-            el = [eb] if not ("block" in eb) else eb["block"]
+            el = [eb] if "block" not in eb else eb["block"]
         return {"if": c, "then": bl, "else": el} if el else {"if": c, "then": bl}
 
     def _assign(self):
@@ -465,7 +464,7 @@ class HL:
 
     def _gia(self, s):
         tg = s["index_assign"]
-        if not ("index" in tg):
+        if "index" not in tg:
             return
         bl = self._la(tg["index"])
         if bl is None:
