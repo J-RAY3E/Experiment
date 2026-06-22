@@ -1,6 +1,20 @@
     .data 0
 data_start:
-    .string "Hello, World!\n"
+    .word 14  ; len "Hello, World!\n"
+    .word 72  ; 'H'
+    .word 101  ; 'e'
+    .word 108  ; 'l'
+    .word 108  ; 'l'
+    .word 111  ; 'o'
+    .word 44  ; ','
+    .word 32  ; ' '
+    .word 87  ; 'W'
+    .word 111  ; 'o'
+    .word 114  ; 'r'
+    .word 108  ; 'l'
+    .word 100  ; 'd'
+    .word 33  ; '!'
+    .word 10  ; '\n'
     .text 0
     J main
     main:
@@ -13,8 +27,9 @@ data_start:
     ADDI t2, zero, 0
     ps_1:
     BGE t2, t1, pe_2
-    ADD t3, t0, t2
-    LB t3, t3, 0
+    SLLI t3, t2, 2
+    ADD t3, t0, t3
+    LW t3, t3, 0
     SW t3, t4, 0
     ADDI t2, t2, 1
     J ps_1

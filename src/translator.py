@@ -29,6 +29,7 @@ IMM12_MIN, IMM12_MAX = -2048, 2047
 IMM20_MAX = 0xFFFFF
 BRANCH_MIN, BRANCH_MAX = -1024, 1023
 
+
 def rnum(s: str) -> int:
     s = s.strip().lower()
     if s in REG:
@@ -38,14 +39,17 @@ def rnum(s: str) -> int:
         return int(m.group(1))
     raise ValueError(f"bad register: {s}")
 
+
 def vnum(s: str) -> int:
     return int(s.strip().upper().lstrip("V"))
+
 
 def imm(s: str) -> int:
     s = s.strip()
     if s.startswith("0x") or s.startswith("0X"):
         return int(s, 16)
     return int(s, 10)
+
 
 def expand(ops, mnem):
     lines: list[dict[str, Any]] = []
@@ -75,6 +79,7 @@ def expand(ops, mnem):
             lines.append({"lb": None, "m": real[mnem], "ops": [ops[0], "zero", ops[1]]})
     return lines
 
+
 def _encode_r_format(op, mnem, ops):
     if mnem == "NOP":
         return 0
@@ -83,6 +88,7 @@ def _encode_r_format(op, mnem, ops):
         return (op << OPCODE_SHIFT) | (rd << RD_SHIFT) | (rnum(ops[1]) << RS1_SHIFT)
     return (op << OPCODE_SHIFT) | (rd << RD_SHIFT) | (rnum(ops[1]) << RS1_SHIFT) | (rnum(ops[2]) << RS2_SHIFT)
 
+
 def _encode_i_format(op, ops, labels):
     try:
         val = int(ops[2], 0)
@@ -90,12 +96,14 @@ def _encode_i_format(op, ops, labels):
         val = labels.get(ops[2], 0)
     return (op << OPCODE_SHIFT) | (rnum(ops[0]) << RD_SHIFT) | (rnum(ops[1]) << RS1_SHIFT) | (val & IMM12_MASK)
 
+
 def _encode_s_format(op, ops, labels):
     try:
         val = int(ops[2], 0)
     except ValueError:
         val = labels.get(ops[2], 0)
     return (op << OPCODE_SHIFT) | (rnum(ops[0]) << RS2_SHIFT) | (rnum(ops[1]) << RS1_SHIFT) | (val & IMM11_MASK)
+
 
 def _encode_b_format(op, ops, labels, addr):
     target = labels.get(ops[2])
@@ -105,6 +113,7 @@ def _encode_b_format(op, ops, labels, addr):
     if off < BRANCH_MIN or off > BRANCH_MAX:
         raise ValueError(f"branch offset {off} out of range")
     return (op << OPCODE_SHIFT) | (rnum(ops[0]) << RS1_SHIFT) | (rnum(ops[1]) << RS2_SHIFT) | (off & IMM11_MASK)
+
 
 def encode(mnem, ops, labels, addr):
     op = OPCODES[mnem]
@@ -140,14 +149,13 @@ def encode(mnem, ops, labels, addr):
         return HALT_WORD
     raise ValueError(f"unknown mnemonic: {mnem}")
 
+
 def _process_line(text, lb):
     if not text:
         return {"lb": lb, "m": None, "ops": []}
-    m_str = re.match(r'\.string\s+(".*")\s*$', text, re.I)
-    if m_str:
-        return {"lb": lb, "m": ".STRING", "ops": [m_str.group(1)]}
     toks = [t for t in re.split(r"[\s,]+", text) if t]
     return {"lb": lb, "m": toks[0].upper(), "ops": toks[1:]}
+
 
 def _resolve_labels(lines):
     labels, addr_code, addr_data = {}, 0, 0
@@ -174,22 +182,16 @@ def _resolve_labels(lines):
                     addr_data = n
             else:
                 addr_code = addr_data = n
-        elif mnem in (".WORD", ".STRING"):
+        elif mnem == ".WORD":
             if not use_separate and section == "code":
                 addr_data = addr_code
             section = "data"
-            if mnem == ".WORD":
-                addr_data += len(ln["ops"]) * 4
-            else:
-                raw = ln["ops"][0]
-                s = raw[1:-1] if raw.startswith('"') else raw
-                s = s.replace("\\n", "\n").replace("\\t", "\t").replace("\\r", "\r")
-                s = s.replace('\\"', '"').replace("\\\\", "\\")
-                addr_data += 4 + len(s)
+            addr_data += len(ln["ops"]) * 4
         elif mnem:
             section = "code"
             addr_code += 4
     return labels
+
 
 def _generate_code(lines, labels):
     data, lst = b"", []
@@ -229,19 +231,7 @@ def _generate_code(lines, labels):
                 data += struct.pack("<I", w)
                 lst.append(f"{addr_data:04X} - {w:08X} - .WORD {o}")
                 addr_data += 4
-        elif mnem == ".STRING":
-            if not use_separate and section == "code":
-                addr_data = addr_code
-            section = "data"
-            s = ops[0][1:-1].replace("\\n", "\n").replace("\\t", "\t").replace("\\r", "\r")
-            data += struct.pack("<I", len(s))
-            lst.append(f"{addr_data:04X} - {len(s):08X} - .STRING_LEN {len(s)}")
-            addr_data += 4
-            for c in s:
-                val = ord(c)
-                data += struct.pack("B", val)
-                lst.append(f"{addr_data:04X} - {val:02X} - .CHAR {c!r}")
-                addr_data += 1
+
         else:
             section = "code"
             w = encode(mnem, ops, labels, addr_code)
@@ -249,6 +239,7 @@ def _generate_code(lines, labels):
             lst.append(f"{addr_code:04X} - {w:08X} - {mnem} {' '.join(ops)}")
             addr_code += 4
     return data, lst
+
 
 def assemble(source):
     lines: list[dict[str, Any]] = []
@@ -278,6 +269,7 @@ def assemble(source):
     labels = _resolve_labels(lines)
     return _generate_code(lines, labels)
 
+
 def write_binary(src: str, bin_path: str, lst_path: str) -> int:
     data, lst = assemble(src)
     with open(bin_path, "wb") as f:
@@ -285,6 +277,7 @@ def write_binary(src: str, bin_path: str, lst_path: str) -> int:
     with open(lst_path, "w", encoding="utf-8") as f:
         f.write("\n".join(lst))
     return len(data)
+
 
 def main(source_path: str, target_prefix: str) -> int:
     with open(source_path, encoding="utf-8") as f:

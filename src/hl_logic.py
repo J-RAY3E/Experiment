@@ -351,7 +351,7 @@ class HL:
     def als(self, c):
         o = self.do
         self.strs.append((o, c))
-        self.do += 4 + len(c)
+        self.do += 4 + len(c) * 4
         return o
 
     def _gfunc(self, f):
@@ -505,8 +505,9 @@ class HL:
                 self.em(f"ADDI {i2}, zero, 0")
                 self.em(f"{ls}:")
                 self.em(f"BGE {i2}, {le}, {le2}")
-                self.em(f"ADD {ch}, {ba}, {i2}")
-                self.em(f"LB {ch}, {ch}, 0")
+                self.em(f"SLLI {ch}, {i2}, 2")
+                self.em(f"ADD {ch}, {ba}, {ch}")
+                self.em(f"LW {ch}, {ch}, 0")
                 self.em(f"SW {ch}, {po}, 0")
                 self.em(f"ADDI {i2}, {i2}, 1")
                 self.em(f"J {ls}")
@@ -546,7 +547,36 @@ class HL:
                 self.em(f"SW {self.er(self.ge(a))}, {po}, 0")
             return
         if "call" in x and x["call"] == "readln":
-            self.em(f"LW {self.ar()}, {self.li(IN_PORT)}, 0")
+            if len(x["args"]) == 0:
+                self.em(f"LW {self.ar()}, {self.li(IN_PORT)}, 0")
+                return
+            a = x["args"][0]
+            o = self.ge(a)
+            addr = self.ar()
+            i2 = self.ar()
+            ch = self.ar()
+            tmp = self.ar()
+            inp = self.li(IN_PORT)
+            if isinstance(o, tuple) and o[0] == "arr":
+                self.em(f"ADDI {addr}, gp, {o[1]}")
+            elif isinstance(o, int):
+                self.em(f"ADDI {addr}, gp, {o}")
+            else:
+                self.em(f"ADD {addr}, gp, {self.er(o)}")
+            self.em(f"ADDI {i2}, zero, 0")
+            l1 = self.ml("rl")
+            l2 = self.ml("re")
+            self.em(f"{l1}:")
+            self.em(f"LW {ch}, {inp}, 0")
+            self.em(f"BEQ {ch}, zero, {l2}")
+            self.em(f"ADDI {tmp}, {ch}, -10")
+            self.em(f"BEQ {tmp}, zero, {l2}")
+            self.em(f"SLLI {tmp}, {i2}, 2")
+            self.em(f"ADD {tmp}, {addr}, {tmp}")
+            self.em(f"SW {ch}, {tmp}, 0")
+            self.em(f"ADDI {i2}, {i2}, 1")
+            self.em(f"J {l1}")
+            self.em(f"{l2}:")
             return
         if "call" in x and x["call"] == "vstore":
             o = self.ge(x["args"][0])
@@ -844,28 +874,20 @@ class HL:
                     its.append((off + i * 4, f"    .word {self.dv.get(off + i * 4, 0)}  ; {n}[{i}]"))
         esc = {"\n": "\\n", "\t": "\\t", "\r": "\\r", '"': '\\"', "\\": "\\\\"}
         for o, c in self.strs:
-            its.append((o, f'    .string "{"".join(esc.get(ch, ch) for ch in c)}"'))
+            chs = [f'    .word {len(c)}  ; len "{"".join(esc.get(ch, ch) for ch in c)}"']
+            for i, ch in enumerate(c):
+                chs.append(f"    .word {ord(ch)}  ; '{esc.get(ch, ch)}'")
+            its.append((o, "\n".join(chs)))
         its.sort(key=lambda x: x[0])
         lns = ["    .data 0", "data_start:"]
         if its:
             cur = 0
-            for ao, line in its:
+            for ao, block in its:
                 if ao > cur:
                     lns.append(f"    .org {ao}")
                     cur = ao
-                lns.append(line)
-                m = re.search(r'\.string "(.*)"', line) if ".string" in line else None
-                if m:
-                    s_len = len(
-                        m.group(1)
-                        .replace("\\n", "\n")
-                        .replace("\\t", "\t")
-                        .replace("\\r", "\r")
-                        .replace('\\"', '"')
-                        .replace("\\\\", "\\")
-                    )
-                    cur += 4 + s_len
-                else:
+                for line in block.split("\n"):
+                    lns.append(line)
                     cur += 4
         else:
             lns.append("    .word 0  ; dummy")

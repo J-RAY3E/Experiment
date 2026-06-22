@@ -256,127 +256,152 @@ data_start:
     .word 0  ; name[253]
     .word 0  ; name[254]
     .word 0  ; name[255]
-    .word 0  ; i
-    .word 0  ; running
-    .string "What is your name? "
-    .word 0  ; c
-    .string "Hello, "
+    .word 19  ; len "What is your name? "
+    .word 87  ; 'W'
+    .word 104  ; 'h'
+    .word 97  ; 'a'
+    .word 116  ; 't'
+    .word 32  ; ' '
+    .word 105  ; 'i'
+    .word 115  ; 's'
+    .word 32  ; ' '
+    .word 121  ; 'y'
+    .word 111  ; 'o'
+    .word 117  ; 'u'
+    .word 114  ; 'r'
+    .word 32  ; ' '
+    .word 110  ; 'n'
+    .word 97  ; 'a'
+    .word 109  ; 'm'
+    .word 101  ; 'e'
+    .word 63  ; '?'
+    .word 32  ; ' '
+    .word 7  ; len "Hello, "
+    .word 72  ; 'H'
+    .word 101  ; 'e'
+    .word 108  ; 'l'
+    .word 108  ; 'l'
+    .word 111  ; 'o'
+    .word 44  ; ','
+    .word 32  ; ' '
     .word 0  ; j
-    .string "!\n"
+    .word 2  ; len "!\n"
+    .word 33  ; '!'
+    .word 10  ; '\n'
     .text 0
     J main
     main:
     ADDI gp, zero, data_start
-    ADDI t0, zero, 1024
-    ADD t0, gp, t0
-    SW zero, t0, 0
-    ADDI t1, zero, 1
-    ADDI t2, zero, 1028
-    ADD t2, gp, t2
-    SW t1, t2, 0
-    LUI t0, 0
-    ADDI t0, t0, -12
-    ADDI t3, gp, 1032
-    LW t4, t3, 0
-    ADDI t3, t3, 4
-    ADDI t5, zero, 0
-    ps_1:
-    BGE t5, t4, pe_2
-    ADD t6, t3, t5
-    LB t6, t6, 0
-    SW t6, t0, 0
-    ADDI t5, t5, 1
-    J ps_1
-    pe_2:
-    wc_3:
-    LW t1, gp, 1028
-    BEQ t1, zero, en_4
-    LUI t3, 0
-    ADDI t3, t3, -16
-    LW t2, t3, 0
-    ADDI t4, zero, 1055
-    ADD t4, gp, t4
-    SW t2, t4, 0
-    LW t5, gp, 1055
-    BNE t5, zero, el_5
-    ADDI t6, zero, 1028
-    ADD t6, gp, t6
-    SW zero, t6, 0
-    el_5:
-    en_6:
-    LW t0, gp, 1055
-    ADDI t1, zero, 10
-    BNE t0, t1, el_7
-    ADDI t2, zero, 1028
-    ADD t2, gp, t2
-    SW zero, t2, 0
-    el_7:
-    en_8:
-    LW t3, gp, 1028
-    BEQ t3, zero, el_9
-    LW t4, gp, 1055
-    LW t5, gp, 1024
-    SLLI t6, t5, 2
-    ADDI t6, t6, 0
-    ADD t6, t6, gp
-    SW t4, t6, 0
-    LW t0, gp, 1024
-    ADDI t1, t0, 1
-    ADDI t2, zero, 1024
-    ADD t2, gp, t2
-    SW t1, t2, 0
-    el_9:
-    en_10:
-    J wc_3
-    en_4:
-    LUI t0, 0
-    ADDI t0, t0, -12
-    ADDI t3, gp, 1059
-    LW t4, t3, 0
-    ADDI t3, t3, 4
-    ADDI t5, zero, 0
-    ps_11:
-    BGE t5, t4, pe_12
-    ADD t6, t3, t5
-    LB t6, t6, 0
-    SW t6, t0, 0
-    ADDI t5, t5, 1
-    J ps_11
-    pe_12:
-    ADDI t1, zero, 1070
-    ADD t1, gp, t1
-    SW zero, t1, 0
-    wc_13:
-    LW t2, gp, 1070
-    LW t3, gp, 1024
-    BGE t2, t3, en_14
     LUI t4, 0
     ADDI t4, t4, -12
-    LW t5, gp, 1070
-    SLLI t6, t5, 2
-    ADDI t6, t6, 0
-    ADD t6, t6, gp
-    LW t0, t6, 0
-    SW t0, t4, 0
-    LW t1, gp, 1070
-    ADDI t2, t1, 1
-    ADDI t3, zero, 1070
-    ADD t3, gp, t3
-    SW t2, t3, 0
-    J wc_13
-    en_14:
-    LUI t1, 0
-    ADDI t1, t1, -12
-    ADDI t4, gp, 1074
-    LW t5, t4, 0
-    ADDI t4, t4, 4
+    ADDI t0, gp, 1024
+    LW t1, t0, 0
+    ADDI t0, t0, 4
+    ADDI t2, zero, 0
+    ps_1:
+    BGE t2, t1, pe_2
+    SLLI t3, t2, 2
+    ADD t3, t0, t3
+    LW t3, t3, 0
+    SW t3, t4, 0
+    ADDI t2, t2, 1
+    J ps_1
+    pe_2:
+    LUI t2, 0
+    ADDI t2, t2, -16
+    ADDI t5, gp, 0
     ADDI t6, zero, 0
-    ps_15:
-    BGE t6, t5, pe_16
-    ADD t0, t4, t6
-    LB t0, t0, 0
+    rl_3:
+    LW t0, t2, 0
+    BEQ t0, zero, re_4
+    ADDI t1, t0, -10
+    BEQ t1, zero, re_4
+    SLLI t1, t6, 2
+    ADD t1, t5, t1
     SW t0, t1, 0
     ADDI t6, t6, 1
+    J rl_3
+    re_4:
+    LUI t0, 0
+    ADDI t0, t0, -12
+    ADDI t3, gp, 1104
+    LW t4, t3, 0
+    ADDI t3, t3, 4
+    ADDI t5, zero, 0
+    ps_5:
+    BGE t5, t4, pe_6
+    SLLI t6, t5, 2
+    ADD t6, t3, t6
+    LW t6, t6, 0
+    SW t6, t0, 0
+    ADDI t5, t5, 1
+    J ps_5
+    pe_6:
+    ADDI t1, zero, 1136
+    ADD t1, gp, t1
+    SW zero, t1, 0
+    wc_7:
+    LW t2, gp, 1136
+    ADDI t3, zero, 256
+    BGE t2, t3, en_8
+    LW t4, gp, 1136
+    SLLI t5, t4, 2
+    ADDI t5, t5, 0
+    ADD t5, t5, gp
+    LW t6, t5, 0
+    BNE t6, zero, el_9
+    ADDI t0, zero, 256
+    ADDI t1, zero, 1136
+    ADD t1, gp, t1
+    SW t0, t1, 0
+    el_9:
+    en_10:
+    LW t2, gp, 1136
+    SLLI t3, t2, 2
+    ADDI t3, t3, 0
+    ADD t3, t3, gp
+    LW t4, t3, 0
+    ADDI t5, zero, 10
+    BNE t4, t5, el_11
+    ADDI t6, zero, 256
+    ADDI t0, zero, 1136
+    ADD t0, gp, t0
+    SW t6, t0, 0
+    el_11:
+    en_12:
+    LW t1, gp, 1136
+    ADDI t2, zero, 256
+    BGE t1, t2, el_13
+    LUI t3, 0
+    ADDI t3, t3, -12
+    LW t4, gp, 1136
+    SLLI t5, t4, 2
+    ADDI t5, t5, 0
+    ADD t5, t5, gp
+    LW t6, t5, 0
+    SW t6, t3, 0
+    LW t0, gp, 1136
+    ADDI t1, t0, 1
+    ADDI t2, zero, 1136
+    ADD t2, gp, t2
+    SW t1, t2, 0
+    el_13:
+    en_14:
+    J wc_7
+    en_8:
+    LUI t0, 0
+    ADDI t0, t0, -12
+    ADDI t3, gp, 1140
+    LW t4, t3, 0
+    ADDI t3, t3, 4
+    ADDI t5, zero, 0
+    ps_15:
+    BGE t5, t4, pe_16
+    SLLI t6, t5, 2
+    ADD t6, t3, t6
+    LW t6, t6, 0
+    SW t6, t0, 0
+    ADDI t5, t5, 1
     J ps_15
     pe_16:
     HALT
