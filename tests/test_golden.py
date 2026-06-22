@@ -168,8 +168,8 @@ def test_translator_and_machine(yaml_path: Path, golden: dict[str, Any], caplog:
     if UPDATE_GOLDENS:
         name = yaml_path.stem
         new_data: dict[str, Any] = {}
-        in_stdin: str = golden.get("in_stdin", "")
-        limit: int = cast(int, golden.get("max_ticks") or 6000)
+        in_stdin = golden.get("in_stdin", "")
+        limit = cast(int, golden.get("max_ticks") or 6000)
 
         alg_name = SRC_MAP.get(name)
         recompiled = _recompile_alg(alg_name) if alg_name else None
