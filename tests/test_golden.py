@@ -42,9 +42,9 @@ def _write_yaml(path: Path, data: dict[str, Any]) -> None:
                 lines = v.split("\n")
                 if lines and lines[-1] == "":
                     lines = lines[:-1]
-                non_empty = [l for l in lines if l.strip()]
+                non_empty = [line for line in lines if line.strip()]
                 if non_empty:
-                    common = min(len(l) - len(l.lstrip()) for l in non_empty)
+                    common = min(len(line) - len(line.lstrip()) for line in non_empty)
                 else:
                     common = 0
                 indent = max(common, 1)

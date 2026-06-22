@@ -1,42 +1,42 @@
 src: hello.alg
-in_src: |1
-     .data 0
- data_start:
-     .word 14  ; len "Hello, World!\n"
-     .word 72  ; 'H'
-     .word 101  ; 'e'
-     .word 108  ; 'l'
-     .word 108  ; 'l'
-     .word 111  ; 'o'
-     .word 44  ; ','
-     .word 32  ; ' '
-     .word 87  ; 'W'
-     .word 111  ; 'o'
-     .word 114  ; 'r'
-     .word 108  ; 'l'
-     .word 100  ; 'd'
-     .word 33  ; '!'
-     .word 10  ; '\n'
-     .text 0
-     J main
-     main:
-     ADDI gp, zero, data_start
-     LUI t4, 0
-     ADDI t4, t4, -12
-     ADDI t0, gp, 0
-     LW t1, t0, 0
-     ADDI t0, t0, 4
-     ADDI t2, zero, 0
-     ps_1:
-     BGE t2, t1, pe_2
-     SLLI t3, t2, 2
-     ADD t3, t0, t3
-     LW t3, t3, 0
-     SW t3, t4, 0
-     ADDI t2, t2, 1
-     J ps_1
-     pe_2:
-     HALT
+in_src: |4
+    .data 0
+    data_start:
+    .word 14  ; len "Hello, World!\n"
+    .word 72  ; 'H'
+    .word 101  ; 'e'
+    .word 108  ; 'l'
+    .word 108  ; 'l'
+    .word 111  ; 'o'
+    .word 44  ; ','
+    .word 32  ; ' '
+    .word 87  ; 'W'
+    .word 111  ; 'o'
+    .word 114  ; 'r'
+    .word 108  ; 'l'
+    .word 100  ; 'd'
+    .word 33  ; '!'
+    .word 10  ; '\n'
+    .text 0
+    J main
+    main:
+    ADDI gp, zero, data_start
+    LUI t4, 0
+    ADDI t4, t4, -12
+    ADDI t0, gp, 0
+    LW t1, t0, 0
+    ADDI t0, t0, 4
+    ADDI t2, zero, 0
+    ps_1:
+    BGE t2, t1, pe_2
+    SLLI t3, t2, 2
+    ADD t3, t0, t3
+    LW t3, t3, 0
+    SW t3, t4, 0
+    ADDI t2, t2, 1
+    J ps_1
+    pe_2:
+    HALT
 in_stdin: "\r\n"
 out_stdout: |1
  Hello, World!

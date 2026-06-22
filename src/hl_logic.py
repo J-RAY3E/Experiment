@@ -879,7 +879,7 @@ class HL:
                 chs.append(f"    .word {ord(ch)}  ; '{esc.get(ch, ch)}'")
             its.append((o, "\n".join(chs)))
         its.sort(key=lambda x: x[0])
-        lns = ["    .data 0", "data_start:"]
+        lns = ["    .data 0", "    data_start:"]
         if its:
             cur = 0
             for ao, block in its:
