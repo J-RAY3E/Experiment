@@ -6,7 +6,7 @@ in_src: |4
     .byte 66    ; 'B'
     .text 0
     J main
-main:
+    main:
     ADDI gp, zero, data_start
     LW t0, gp, 0
     LB t1, gp, 4
