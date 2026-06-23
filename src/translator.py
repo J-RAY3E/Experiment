@@ -232,6 +232,16 @@ def _generate_code(lines, labels):
                 lst.append(f"{addr_data:04X} - {w:08X} - .WORD {o}")
                 addr_data += 4
 
+        elif mnem == ".BYTE":
+            if not use_separate and section == "code":
+                addr_data = addr_code
+            section = "data"
+            for o in ops:
+                b = imm(o) & 0xFF
+                data += struct.pack("<B", b)
+                lst.append(f"{addr_data:04X} - {b:02X} - .BYTE {o}")
+                addr_data += 1
+
         else:
             section = "code"
             w = encode(mnem, ops, labels, addr_code)
