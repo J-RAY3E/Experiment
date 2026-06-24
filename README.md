@@ -685,57 +685,6 @@ python -m src.cli asm <input.asm> <output.bin>
 | `2`       | `uPC = _MAP[opcode]` (диспетчеризация по опкоду)   |
 | `3`       | `uPC = 0` (возврат в `FETCH`)                    |
 
-
-Перечень микроинструкций в µROM (45 элементов, индексы 0–44):
-
-| Индекс | Имя       | Назначение                          |
-|--------|-----------|--------------------------------------|
-| 0      | FETCH     | выборка инструкции (IR), PC += 4   |
-| 1      | DECODE    | uPC = MAP[opcode]                   |
-| 2      | NOP       | холостой такт                       |
-| 3      | LW_EXEC   | вычисление адреса, mem_rd           |
-| 4      | LW_WB     | writeback из памяти в rd            |
-| 5      | SW_EXEC   | вычисление адреса, mem_wr           |
-| 6      | LB_EXEC   | вычисление адреса, mem_rd (byte)    |
-| 7      | LB_WB     | writeback из памяти в rd            |
-| 8      | SB_EXEC   | вычисление адреса, mem_wr (byte)    |
-| 9      | LUI       | writeback imm<<12 в rd              |
-| 10     | ADD       | R-type: ALU op + writeback          |
-| 11     | SUB       | R-type: ALU op + writeback          |
-| 12     | MUL       | R-type: ALU op + writeback          |
-| 13     | DIV       | R-type: ALU op + writeback          |
-| 14     | REM       | R-type: ALU op + writeback          |
-| 15     | MULH      | R-type: ALU op + writeback          |
-| 16     | AND       | R-type: ALU op + writeback          |
-| 17     | OR        | R-type: ALU op + writeback          |
-| 18     | XOR       | R-type: ALU op + writeback          |
-| 19     | NOT       | R-type: ALU op + writeback          |
-| 20     | SLL       | R-type: ALU op + writeback          |
-| 21     | SRL       | R-type: ALU op + writeback          |
-| 22     | SRA       | R-type: ALU op + writeback          |
-| 23     | SLT       | R-type: ALU op + writeback          |
-| 24     | ADDI      | I-type: ALU op + writeback          |
-| 25     | ANDI      | I-type: ALU op + writeback          |
-| 26     | ORI       | I-type: ALU op + writeback          |
-| 27     | XORI      | I-type: ALU op + writeback          |
-| 28     | SLLI      | I-type: ALU op + writeback          |
-| 29     | SRLI      | I-type: ALU op + writeback          |
-| 30     | SRAI      | I-type: ALU op + writeback          |
-| 31     | SLTI      | I-type: ALU op + writeback          |
-| 32     | BEQ       | branch: PC += imm (если условие)    |
-| 33     | BNE       | branch: PC += imm (если условие)    |
-| 34     | BLT       | branch: PC += imm (если условие)    |
-| 35     | BLE       | branch: PC += imm (если условие)    |
-| 36     | BGT       | branch: PC += imm (если условие)    |
-| 37     | BGE       | branch: PC += imm (если условие)    |
-| 38     | BGTU      | branch: PC += imm (если условие)    |
-| 39     | BLEU      | branch: PC += imm (если условие)    |
-| 40     | J         | jump: PC = PC + sign_ext(imm26)     |
-| 41     | JAL_EXEC  | save PC+4 → rd                      |
-| 42     | JAL_WB    | jump: PC = PC + sign_ext(imm21)     |
-| 43     | JR        | jump: PC = rm                       |
-| 44     | HALT      | остановка модели                    |
-
 Каждая микроинструкция (включая `FETCH`, `DECODE` и все остальные) занимает 1 такт.
 
 ![ControlUnit](scheme/cu_scheme.jpg)
