@@ -56,17 +56,17 @@ def load_binary(bin_path: str, lst_path: str | None = None) -> tuple[list[int], 
 
     return instr_words, data_map, data_base
 
-class Machine:
 
+class Machine:
     def __init__(self, bin_path: str, lst_path: str | None = None, input_text: str = "") -> None:
         instr_words, data_map, data_base = load_binary(bin_path, lst_path)
         self.instr_mem: list[int] = instr_words
-        self.dp = DataPath(input_text)
+        self.cp = ControlPath()
+        self.dp = DataPath(input_text, self.cp)
         for addr, w in data_map.items():
             self.dp.mem.mem[addr] = w
         self.dp.regs.write(REG["gp"], data_base)
         self.dp.regs.write(REG["sp"], STACK_BASE)
-        self.cp = ControlPath()
         self.halted = False
         self.tick_count = 0
         self.snapshots: list[dict[str, Any]] = []
@@ -93,7 +93,7 @@ class Machine:
         self.tick_count += 1
 
         ir = self.dp.ir
-        mi = self.cp.current_mi(ir)
+        mi = self.cp.current_mi()
         mi_name = self.cp.phase_name
         inst_word: int | None = None
         if mi.ir_we and 0 <= (self.dp.pc >> 2) < len(self.instr_mem):
@@ -123,13 +123,13 @@ class Machine:
 
             saved_upc = self.cp.upc
             self.cp.upc = s["upc"]
-            mi = self.cp.current_mi(ir)
+            mi = self.cp.current_mi()
             self.cp.upc = saved_upc
             sigs = []
             if mi.ir_we:
                 sigs.append("ir_we")
-            if mi.pc_inc:
-                sigs.append("pc+1")
+            if mi.pc_src:
+                sigs.append("pc_src")
             if mi.mar_we:
                 sigs.append("mar_we")
             if mi.mem_rd:
@@ -162,8 +162,6 @@ class Machine:
         return {REG_NAMES[i]: self.dp.regs.regs[i] for i in range(len(REG_NAMES))}
 
     def write_outputs(self, target_prefix: str) -> None:
-        import struct
-
         cmem_data = struct.pack(f"<{len(self.instr_mem)}I", *self.instr_mem)
         with open(target_prefix + ".cmem", "wb") as f:
             f.write(cmem_data)
@@ -176,6 +174,7 @@ class Machine:
         mem_hex = " ".join(f"{b:02X}" for b in bytes_data)
         with open(target_prefix + ".mem.hex", "w", encoding="utf-8") as f:
             f.write(mem_hex + "\n" if mem_hex else "\n")
+
 
 def main(target_prefix: str = "", input_path: str = "", limit: int = 200000) -> str | None:
     if target_prefix:
@@ -214,6 +213,7 @@ def main(target_prefix: str = "", input_path: str = "", limit: int = 200000) -> 
         if v:
             print(f"  {k:4}: {v} (0x{v:08X})")
     return None
+
 
 if __name__ == "__main__":
     main()

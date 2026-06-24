@@ -2,15 +2,6 @@ from __future__ import annotations
 
 from typing import Any
 
-OPCODE_BITS = 6
-REG_BITS = 5
-IMM11_BITS = 11
-IMM12_BITS = 12
-IMM20_BITS = 20
-IMM21_BITS = 21
-IMM26_BITS = 26
-WORD_BITS = 32
-
 OPCODE_MASK = 0x3F
 REG_MASK = 0x1F
 IMM11_MASK = 0x7FF
@@ -32,8 +23,6 @@ IN_PORT = 0xFFFFFFF0
 OUT_PORT = 0xFFFFFFF4
 
 NUM_REGS = 32
-NUM_VREGS = 8
-VLANES = 4
 DATA_MEM_SIZE = 32768
 STACK_BASE = 0x4000
 
@@ -77,13 +66,6 @@ OPCODES = {
     "J": 0x28,
     "JAL": 0x29,
     "JR": 0x2A,
-    "VADD": 0x30,
-    "VSUB": 0x31,
-    "VMUL": 0x32,
-    "VDIV": 0x33,
-    "VLD": 0x34,
-    "VST": 0x35,
-    "VCMP": 0x36,
     "HALT": 0x3F,
 }
 
@@ -135,14 +117,8 @@ J_FORMAT = {"J"}
 JL_FORMAT = {"JAL"}
 JR_FORMAT = {"JR"}
 U_FORMAT = {"LUI"}
-V_FORMAT = {"VADD", "VSUB", "VMUL", "VDIV", "VCMP"}
-VL_FORMAT = {"VLD", "VST"}
-
-R_IL_FORMAT = R_FORMAT | I_FORMAT | L_FORMAT
-R_ILV_FORMAT = R_IL_FORMAT | V_FORMAT
 
 HALT_WORD = OPCODES["HALT"] << OPCODE_SHIFT
-
 
 def _sext11(imm: int) -> int:
     return imm | ~IMM11_MASK if imm & IMM11_SIGN else imm
@@ -150,7 +126,6 @@ def _sext11(imm: int) -> int:
 
 def _sext12(imm: int) -> int:
     return imm | ~IMM12_MASK if imm & IMM12_SIGN else imm
-
 
 def decode(word: int) -> dict[str, Any]:
     op = (word >> OPCODE_SHIFT) & OPCODE_MASK
@@ -171,34 +146,3 @@ def decode(word: int) -> dict[str, Any]:
         "imm_u21": word & IMM21_MASK,
         "imm_u26": word & IMM26_MASK,
     }
-
-
-def encode(opcode: int, rd: int = 0, rs1: int = 0, rs2: int = 0, imm: int = 0) -> int:
-    name = OPCODE_NAMES.get(opcode, "")
-    s1 = (rd & REG_MASK) << RD_SHIFT
-    s2 = (rs1 & REG_MASK) << RS1_SHIFT
-    s3 = (rs2 & REG_MASK) << RS2_SHIFT
-    im = imm & IMM11_MASK
-
-    if name in R_FORMAT | V_FORMAT:
-        if name == "NOT":
-            return (opcode << OPCODE_SHIFT) | s1 | s2
-        if name == "NOP":
-            return 0
-        return (opcode << OPCODE_SHIFT) | s1 | s2 | s3
-    if name in I_FORMAT | L_FORMAT | VL_FORMAT:
-        im = imm & IMM12_MASK
-        return (opcode << OPCODE_SHIFT) | s1 | s2 | im
-    if name in S_FORMAT:
-        return (opcode << OPCODE_SHIFT) | s1 | s2 | im
-    if name in B_FORMAT:
-        return (opcode << OPCODE_SHIFT) | s2 | s3 | im
-    if name in U_FORMAT | JL_FORMAT:
-        return (opcode << OPCODE_SHIFT) | s1 | (imm & IMM21_MASK)
-    if name in J_FORMAT:
-        return (opcode << OPCODE_SHIFT) | (imm & IMM26_MASK)
-    if name == "JR":
-        return (opcode << OPCODE_SHIFT) | s2
-    if name == "HALT":
-        return HALT_WORD
-    return (opcode << OPCODE_SHIFT) | s1 | s2 | s3 | im

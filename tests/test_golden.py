@@ -28,35 +28,36 @@ SRC_MAP = {
     "sort_test": "sort.alg",
     "function_call_test": "function_call.alg",
     "double_precision_test": "double_precision.alg",
-    "vector_demo_test": "testVector.alg",
 }
+
+
+def _yaml_scalar(value: str) -> str:
+    if not value:
+        return '""'
+    lines = value.split("\n")
+    if lines and lines[-1] == "":
+        lines = lines[:-1]
+    if len(lines) <= 1:
+        esc = value.replace("\\", "\\\\").replace('"', '\\"').replace("\r", "\\r").replace("\n", "\\n")
+        return f'"{esc}"'
+    out = "|\n"
+    for line in lines:
+        out += f"  {line}\n" if line else "\n"
+    return out
 
 
 def _write_yaml(path: Path, data: dict[str, Any]) -> None:
     with open(path, "w", encoding="utf-8") as f:
         for k, v in data.items():
-            if k == "in_stdin" and isinstance(v, str):
+            if k in ("in_stdin", "out_stdout") and isinstance(v, str):
                 esc = v.replace("\\", "\\\\").replace('"', '\\"').replace("\r", "\\r").replace("\n", "\\n")
                 f.write(f'{k}: "{esc}"\n')
             elif isinstance(v, str) and "\n" in v:
-                lines = v.split("\n")
-                if lines and lines[-1] == "":
-                    lines = lines[:-1]
-                non_empty = [line for line in lines if line.strip()]
-                if non_empty:
-                    common = min(len(line) - len(line.lstrip()) for line in non_empty)
-                else:
-                    common = 0
-                indent = max(common, 1)
-                pad = indent - common
-                f.write(f"{k}: |{indent}\n")
-                for line in lines:
-                    if line:
-                        f.write(f"{' ' * pad}{line}\n")
-                    else:
-                        f.write("\n")
+                f.write(f"{k}: {_yaml_scalar(v)}")
             elif isinstance(v, str):
                 f.write(f"{k}: {v}\n")
+            elif isinstance(v, bool):
+                f.write(f"{k}: {'true' if v else 'false'}\n")
             elif isinstance(v, int):
                 f.write(f"{k}: {v}\n")
             else:
@@ -67,10 +68,10 @@ def _make_single_line(data: str) -> str:
     return data.replace("\n", r"\n").replace("\r", "")
 
 
-def _recompile_alg(alg_name: str) -> str | None:
+def _recompile_alg(alg_name: str) -> tuple[str | None, str | None]:
     src_path = EXAMPLES_DIR / alg_name
     if not src_path.exists():
-        return None
+        return None, None
     import subprocess
     import sys
 
@@ -82,8 +83,8 @@ def _recompile_alg(alg_name: str) -> str | None:
         timeout=30,
     )
     if r.returncode != 0:
-        return None
-    return asm_path.read_text()
+        return None, None
+    return src_path.read_text(), asm_path.read_text()
 
 
 def load_golden_cases() -> list[tuple[Path, dict[str, Any]]]:
@@ -95,7 +96,7 @@ def load_golden_cases() -> list[tuple[Path, dict[str, Any]]]:
     return cases
 
 
-def run_test_case(in_source: str, in_stdin: str, limit: int) -> dict[str, str]:
+def run_test_case(in_source: str, in_stdin: str, limit: int) -> dict[str, Any]:
     with tempfile.TemporaryDirectory() as tmpdirname:
         tmpdir = Path(tmpdirname)
         source = tmpdir / "source.asm"
@@ -126,12 +127,13 @@ def run_test_case(in_source: str, in_stdin: str, limit: int) -> dict[str, str]:
         return {
             "out_stdout": stdout_capture.getvalue().replace("\r", ""),
             "out_log": log,
+            "halted": m.halted,
         }
 
 
 @pytest.mark.parametrize(("yaml_path", "golden"), load_golden_cases())
 def test_translator_and_machine(yaml_path: Path, golden: dict[str, Any], caplog: pytest.LogCaptureFixture) -> None:
-    in_source: str | None = cast(str | None, golden.get("in_src") or golden.get("in_source"))
+    in_source: str | None = cast(str | None, golden.get("asm_src") or golden.get("in_src") or golden.get("in_source"))
     source_file: str | None = cast(str | None, golden.get("src") or golden.get("source_file"))
 
     if in_source is None and source_file is None:
@@ -141,7 +143,7 @@ def test_translator_and_machine(yaml_path: Path, golden: dict[str, Any], caplog:
         name = yaml_path.stem
         alg_name = SRC_MAP.get(name)
         if alg_name:
-            compiled = _recompile_alg(alg_name)
+            _alg_src, compiled = _recompile_alg(alg_name)
             if compiled:
                 in_source = compiled
 
@@ -161,34 +163,37 @@ def test_translator_and_machine(yaml_path: Path, golden: dict[str, Any], caplog:
 
     actual = run_test_case(in_source, in_stdin, limit)
 
-    actual_norm = {k: _make_single_line(v) for k, v in actual.items()}
+    actual_norm = {k: _make_single_line(v) for k, v in actual.items() if isinstance(v, str)}
     actual_norm["out_log"] = actual["out_log"].replace("\r", "")
     actual_norm["out_stdout"] = actual["out_stdout"].replace("\r", "")
 
     if UPDATE_GOLDENS:
         name = yaml_path.stem
-        new_data: dict[str, Any] = {}
         in_stdin = golden.get("in_stdin", "")
         limit = cast(int, golden.get("max_ticks") or 6000)
 
         alg_name = SRC_MAP.get(name)
-        recompiled = _recompile_alg(alg_name) if alg_name else None
+        alg_src, recompiled = _recompile_alg(alg_name) if alg_name else (None, None)
+
+        new_data: dict[str, Any] = {}
+        new_data["max_ticks"] = golden.get("max_ticks") or limit
 
         if recompiled:
             new_data["src"] = alg_name
-            new_data["in_src"] = recompiled
+            if alg_src is not None:
+                new_data["alg_src"] = alg_src
+            new_data["asm_src"] = recompiled
             actual = run_test_case(recompiled, in_stdin, limit)
-            actual_norm = {k: _make_single_line(v) for k, v in actual.items()}
+            actual_norm = {k: _make_single_line(v) for k, v in actual.items() if isinstance(v, str)}
             actual_norm["out_log"] = actual["out_log"].replace("\r", "")
             actual_norm["out_stdout"] = actual["out_stdout"].replace("\r", "")
         else:
             new_data["src"] = alg_name if alg_name else "N/A (manual assembly)"
-            new_data["in_src"] = golden.get("in_src") or golden.get("in_source", "")
+            new_data["asm_src"] = golden.get("asm_src") or golden.get("in_src") or golden.get("in_source", "")
 
         new_data["in_stdin"] = in_stdin
         new_data["out_stdout"] = actual_norm["out_stdout"]
-        if "max_ticks" in golden:
-            new_data["max_ticks"] = golden["max_ticks"]
+        new_data["halted"] = actual.get("halted", True)
         new_data["out_log"] = actual_norm["out_log"]
 
         _write_yaml(yaml_path, new_data)
@@ -196,3 +201,5 @@ def test_translator_and_machine(yaml_path: Path, golden: dict[str, Any], caplog:
 
     assert actual_norm["out_stdout"].rstrip("\n") == golden["out_stdout"].rstrip("\n")
     assert actual_norm["out_log"].rstrip("\n") == golden["out_log"].rstrip("\n")
+    if "halted" in golden:
+        assert actual.get("halted") == golden["halted"]

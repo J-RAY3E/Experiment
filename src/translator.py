@@ -20,7 +20,6 @@ from src.isa import (
     RS1_SHIFT,
     RS2_SHIFT,
     S_FORMAT,
-    V_FORMAT,
     WORD_MASK,
 )
 
@@ -38,10 +37,6 @@ def rnum(s: str) -> int:
     if m:
         return int(m.group(1))
     raise ValueError(f"bad register: {s}")
-
-
-def vnum(s: str) -> int:
-    return int(s.strip().upper().lstrip("V"))
 
 
 def imm(s: str) -> int:
@@ -128,23 +123,15 @@ def encode(mnem, ops, labels, addr):
     if mnem == "LUI":
         return (op << OPCODE_SHIFT) | (rnum(ops[0]) << RD_SHIFT) | (imm(ops[1]) & IMM20_MASK)
     if mnem == "J":
-        return (op << OPCODE_SHIFT) | (labels.get(ops[0], 0) & IMM26_MASK)
+        target = labels.get(ops[0], 0)
+        off = target - addr - 4
+        return (op << OPCODE_SHIFT) | (off & IMM26_MASK)
     if mnem == "JAL":
-        return (op << OPCODE_SHIFT) | (rnum(ops[0]) << RD_SHIFT) | (labels.get(ops[1], 0) & IMM21_MASK)
+        target = labels.get(ops[1], 0)
+        off = target - addr - 4
+        return (op << OPCODE_SHIFT) | (rnum(ops[0]) << RD_SHIFT) | (off & IMM21_MASK)
     if mnem == "JR":
         return (op << OPCODE_SHIFT) | (rnum(ops[0]) << RS1_SHIFT)
-    if mnem in V_FORMAT:
-        return (op << OPCODE_SHIFT) | (vnum(ops[0]) << RD_SHIFT) | (vnum(ops[1]) << RS1_SHIFT) | (vnum(ops[2]) << RS2_SHIFT)
-    if mnem in {"VLD", "VST"}:
-        m2 = re.match(r"\[(\w+)\s*\+\s*([^\]]+)\]", "".join(ops[1:]))
-        if m2:
-            return (
-                (op << OPCODE_SHIFT)
-                | (vnum(ops[0]) << RD_SHIFT)
-                | (rnum(m2.group(1)) << RS1_SHIFT)
-                | (imm(m2.group(2)) & IMM12_MASK)
-            )
-        return 0
     if mnem == "HALT":
         return HALT_WORD
     raise ValueError(f"unknown mnemonic: {mnem}")
@@ -187,6 +174,16 @@ def _resolve_labels(lines):
                 addr_data = addr_code
             section = "data"
             addr_data += len(ln["ops"]) * 4
+        elif mnem == ".STRING":
+            if not use_separate and section == "code":
+                addr_data = addr_code
+            section = "data"
+            addr_data += 4 + len(ln["ops"][0]) * 4
+        elif mnem == ".BYTE":
+            if not use_separate and section == "code":
+                addr_data = addr_code
+            section = "data"
+            addr_data += len(ln["ops"])
         elif mnem:
             section = "code"
             addr_code += 4
@@ -242,6 +239,21 @@ def _generate_code(lines, labels):
                 lst.append(f"{addr_data:04X} - {b:02X} - .BYTE {o}")
                 addr_data += 1
 
+        elif mnem == ".STRING":
+            if not use_separate and section == "code":
+                addr_data = addr_code
+            section = "data"
+            s = ops[0]
+            w = len(s) & WORD_MASK
+            data += struct.pack("<I", w)
+            lst.append(f"{addr_data:04X} - {w:08X} - .WORD {w}  ; len '{s}'")
+            addr_data += 4
+            for ch in s:
+                w = ord(ch) & WORD_MASK
+                data += struct.pack("<I", w)
+                lst.append(f"{addr_data:04X} - {w:08X} - .WORD {w}  ; '{ch}'")
+                addr_data += 4
+
         else:
             section = "code"
             w = encode(mnem, ops, labels, addr_code)
@@ -273,6 +285,13 @@ def assemble(source):
                 e["lb"] = lb
                 lb = None
                 lines.append(e)
+        elif parsed["m"] == ".STRING":
+            rest = text[len(parsed["m"]) :].strip()
+            if rest.startswith('"') and rest.endswith('"'):
+                rest = rest[1:-1]
+            rest = rest.replace("\\n", "\n").replace("\\t", "\t").replace("\\r", "\r").replace('\\"', '"').replace("\\\\", "\\")
+            parsed["ops"] = [rest]
+            lines.append(parsed)
         else:
             lines.append(parsed)
 
