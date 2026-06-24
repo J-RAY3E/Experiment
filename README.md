@@ -87,6 +87,7 @@ alg | risc | harv | mc | tick | binary | stream | mem | pstr | alg1
                  | <unary-op> <expr>
                  | <expr> <binary-op> <expr>
                  | <identifier> "(" <arg-list>? ")"
+                 | "len" "(" <expr> ")"
                  | <identifier> ("[" <expr> "]")+
                  | "{" <arg-list>? "}"
                  | "(" <expr> ")"
@@ -130,12 +131,12 @@ alg | risc | harv | mc | tick | binary | stream | mem | pstr | alg1
 - `while` повторно вычисляет условие и выполняет тело, пока условие истинно;
 - `function` вводит новую область видимости;
 - `halt;` останавливает модель процессора;
-- `len(arr)` — возвращает количество элементов массива (известно на этапе компиляции).
+- `len(arr)` — возвращает количество элементов массива (известно на этапе компиляции, используется как `len(arr)`).
 
 #### Области видимости
 
-- программная единица — функция; глобальной видимости нет;
-- переменные, объявленные через `let`, видны только внутри блока, в котором они объявлены, и во вложенных блоках;
+- глобальных переменных нет — все переменные объявляются внутри функций;
+- переменные, объявленные через `let`, видны только внутри блока, в котором они объявлены, и во вложенных блоках (тело функции — тоже блок);
 - имя переменной должно быть объявлено до первого использования;
 - параметры функций: до 8 параметров, передаются через `a0`..`a7`.
 
@@ -253,7 +254,7 @@ data_start:
 - инструкция: 32 бита фиксированной длины;
 - память данных: байтовая адресация, выравнивание 4 байта;
 - размер памяти данных: 32768 байт (32 KiB, см. `DATA_MEM_SIZE` в `src/isa.py`);
-- база стека: `0x4000` (`STACK_BASE`), стек растёт вниз;
+- база стека: `0x8000` (`STACK_BASE`), стек растёт вниз; вся память данных (32 KiB) доступна как для статических данных, так и для стека (стек растёт от `STACK_BASE` вниз, данные — от `0x0000` вверх);
 - память инструкций: word-addressable, адресация: `instruction_memory[PC >> 2]`, PC — байтовый адрес;
 - ввод-вывод реализован через memory-mapped I/O
 
@@ -302,7 +303,7 @@ data_start:
             |  gp-относительная      |
             |  (data_start)          |
             |                        |
-0x00004000  +------------------------+
+0x00008000  +------------------------+
             | stack (растёт вниз)    |
             |   ...                  |
             |   saved ra, locals     |
@@ -668,7 +669,7 @@ python -m src.cli asm <input.asm> <output.bin>
 Основные мультиплексоры:
 
 - `MUX_A`: `0=none`, `1=rs1`, `2=PC`;
-- `MUX_B`: `0=none`, `1=rs2`, `2=imm_s`, `3=zero`;
+- `MUX_B`: `0=none`, `1=rs2`, `2=imm`, `3=zero`, `4=imm_u26`, `5=imm_u21`;
 - `MUX_WB`: `0=none`, `1=ALU_OUT`, `2=MEM`, `3=PC+4`, `4=imm<<12`, `5=imm_u26`, `6=imm_u21`;
 - `MUX_PC`: `PC+4` либо `src_bus`.
 
@@ -676,41 +677,66 @@ python -m src.cli asm <input.asm> <output.bin>
 
 ### ControlUnit
 
-`ControlUnit` — горизонтально-микрокодированный. µROM (`src/control_path.py`) содержит 45 микроинструкций (адреса 0–44). На каждом такте выбирается микроинструкция по текущему адресу `uPC`; после её исполнения значение `uPC` обновляется в соответствии с полем `br_type`:
+`ControlUnit` — горизонтально-микрокодированный. µROM (`src/control_unit.py`) содержит 45 микроинструкций (адреса 0–44). На каждом такте выбирается микроинструкция по текущему адресу `uPC`; после её исполнения значение `uPC` обновляется в соответствии с полем `br_type`:
 
 | `br_type` | Следующий `uPC`                                  |
 |-----------|---------------------------------------------------|
-| `0`       | `uPC + 1` (следующий шаг)                         |
 | `1`       | `uPC = mi.addr` (явный переход)                   |
 | `2`       | `uPC = _MAP[opcode]` (диспетчеризация по опкоду)   |
 | `3`       | `uPC = 0` (возврат в `FETCH`)                    |
 
-Микроинструкция `FETCH` (адрес 0) устанавливает `MAR = PC` (подготовка к чтению памяти), затем `br_type = 0` переходит к `DECODE`. Микроинструкция `DECODE` (адрес 1) устанавливает сигнал `ir_we = 1`, что вызывает выборку инструкции из `instruction_memory[PC >> 2]` в `IR` и инкремент `PC += 4`. После этого `br_type = 2` выполняет диспетчеризацию к начальному адресу микропрограммы конкретной инструкции через MAPPER-таблицу `_MAP[opcode]`.
 
 Перечень микроинструкций в µROM (45 элементов, индексы 0–44):
 
 | Индекс | Имя       | Назначение                          |
 |--------|-----------|--------------------------------------|
-| 0      | FETCH     | выборка инструкции, MAR = PC        |
-| 1      | DECODE    | запись IR, PC += 4, dispatch        |
+| 0      | FETCH     | выборка инструкции (IR), PC += 4   |
+| 1      | DECODE    | uPC = MAP[opcode]                   |
 | 2      | NOP       | холостой такт                       |
 | 3      | LW_EXEC   | вычисление адреса, mem_rd           |
-| 4      | LW_WB     | writeback из MDR в rd               |
-| 5      | SW        | вычисление адреса, mem_wr           |
+| 4      | LW_WB     | writeback из памяти в rd            |
+| 5      | SW_EXEC   | вычисление адреса, mem_wr           |
 | 6      | LB_EXEC   | вычисление адреса, mem_rd (byte)    |
-| 7      | LB_WB     | writeback из MDR в rd               |
-| 8      | SB        | вычисление адреса, mem_wr (byte)    |
+| 7      | LB_WB     | writeback из памяти в rd            |
+| 8      | SB_EXEC   | вычисление адреса, mem_wr (byte)    |
 | 9      | LUI       | writeback imm<<12 в rd              |
-| 10–23  | R_EX      | R-type: ALU op + writeback          |
-| 24–31  | I_EX      | I-type: ALU op + writeback          |
-| 32–39  | B_EX      | branch: PC += imm (если условие)    |
-| 40     | J_EX      | jump: PC = target                   |
-| 41     | JL_EXEC   | save PC+4 → rd                      |
-| 42     | JL_WB     | jump: PC = target                   |
-| 43     | JR_EX     | jump: PC = rm                       |
+| 10     | ADD       | R-type: ALU op + writeback          |
+| 11     | SUB       | R-type: ALU op + writeback          |
+| 12     | MUL       | R-type: ALU op + writeback          |
+| 13     | DIV       | R-type: ALU op + writeback          |
+| 14     | REM       | R-type: ALU op + writeback          |
+| 15     | MULH      | R-type: ALU op + writeback          |
+| 16     | AND       | R-type: ALU op + writeback          |
+| 17     | OR        | R-type: ALU op + writeback          |
+| 18     | XOR       | R-type: ALU op + writeback          |
+| 19     | NOT       | R-type: ALU op + writeback          |
+| 20     | SLL       | R-type: ALU op + writeback          |
+| 21     | SRL       | R-type: ALU op + writeback          |
+| 22     | SRA       | R-type: ALU op + writeback          |
+| 23     | SLT       | R-type: ALU op + writeback          |
+| 24     | ADDI      | I-type: ALU op + writeback          |
+| 25     | ANDI      | I-type: ALU op + writeback          |
+| 26     | ORI       | I-type: ALU op + writeback          |
+| 27     | XORI      | I-type: ALU op + writeback          |
+| 28     | SLLI      | I-type: ALU op + writeback          |
+| 29     | SRLI      | I-type: ALU op + writeback          |
+| 30     | SRAI      | I-type: ALU op + writeback          |
+| 31     | SLTI      | I-type: ALU op + writeback          |
+| 32     | BEQ       | branch: PC += imm (если условие)    |
+| 33     | BNE       | branch: PC += imm (если условие)    |
+| 34     | BLT       | branch: PC += imm (если условие)    |
+| 35     | BLE       | branch: PC += imm (если условие)    |
+| 36     | BGT       | branch: PC += imm (если условие)    |
+| 37     | BGE       | branch: PC += imm (если условие)    |
+| 38     | BGTU      | branch: PC += imm (если условие)    |
+| 39     | BLEU      | branch: PC += imm (если условие)    |
+| 40     | J         | jump: PC = PC + sign_ext(imm26)     |
+| 41     | JAL_EXEC  | save PC+4 → rd                      |
+| 42     | JAL_WB    | jump: PC = PC + sign_ext(imm21)     |
+| 43     | JR        | jump: PC = rm                       |
 | 44     | HALT      | остановка модели                    |
 
-Даже `FETCH` занимает 1 такт.
+Каждая микроинструкция (включая `FETCH`, `DECODE` и все остальные) занимает 1 такт.
 
 ![ControlUnit](scheme/cu_scheme.jpg)
 
@@ -723,17 +749,18 @@ python -m src.cli asm <input.asm> <output.bin>
 | Бит(ы)  | Поле       | Назначение                                                      |
 |---------|------------|-----------------------------------------------------------------|
 | 0       | `ir_we`    | разрешение записи в `IR` (строб выборки инструкции)            |
+| 1       | `alu_exec` | строб ALU                                                       |
 | 2       | `pc_src`   | `1` = загрузить `PC` из `feedback_bus` (переход)               |
 | 5–6     | `a_sel`    | выбор операнда A для ALU: `0=none`, `1=rs1`, `2=PC`            |
-| 7–8     | `b_sel`    | выбор операнда B для ALU: `0=none`, `1=rs2`, `2=imm`, `3=zero` |
-| 9       | `alu_exec` | строб ALU                                                       |
+| 7–9     | `b_sel`    | выбор операнда B для ALU: `0=none`, `1=rs2`, `2=imm`, `3=zero`, `4=imm_u26`, `5=imm_u21` |
+| 10      | `mar_we`   | разрешение записи в `MAR`                                       |
 | 11      | `mem_rd`   | строб чтения из памяти                                          |
 | 12      | `mem_wr`   | строб записи в память                                           |
 | 13      | `mem_byte` | байтовый режим (`LB`/`SB`)                                      |
 | 14      | `reg_we`   | разрешение записи в регистровый файл                            |
 | 15–17   | `reg_src`  | источник `feedback_bus`: `0=none`, `1=ALU_OUT`, `2=MEM`, `3=PC+4`, `4=imm<<12`, `5=imm_u26`, `6=imm_u21` |
 | 19      | `halt`     | запрос остановки                                                |
-| 20–21   | `br_type`  | управление `uPC`: `0=next`, `1=addr`, `2=MAPPER`, `3=FECTH`    |
+| 20–21   | `br_type`  | управление `uPC`: `0=next`, `1=addr`, `2=MAPPER`, `3=FETCH`    |
 | 22–29   | `addr`     | явный адрес перехода (для `br_type=1`)                          |
 
 ### Фазы выполнения инструкций
@@ -744,8 +771,8 @@ python -m src.cli asm <input.asm> <output.bin>
 
 | Инструкция          | µROM-последовательность                                             |
 |---------------------|----------------------------------------------------------------------|
-| `ADD`/`SUB`/...     | `FETCH → DECODE → R_EX`                                      |
-| `ADDI`/`LUI`/...    | `FETCH → DECODE → I_EX` (или `U_EX` для `LUI`)              |
+| `ADD`/`SUB`/...     | `FETCH → DECODE → ADD/SUB/...`                              |
+| `ADDI`/`LUI`/...    | `FETCH → DECODE → ADDI/...`                                 |
 | `LW`/`LB`           | `FETCH → DECODE → L_EXEC → L_WB`                             |
 | `SW`/`SB`           | `FETCH → DECODE → S_EXEC`                                    |
 | `BEQ`/`BNE`/...     | `FETCH → DECODE → B_EX`                                      |
@@ -769,7 +796,7 @@ python -m src.cli asm <input.asm> <output.bin>
 - `Micro` (имя микроинструкции);
 - активные сигналы (`ir_we`, `pc_src`, `mem_rd`, `mem_wr`, `reg_we`);
 - мнемонику декодированной инструкции;
-- значения 16 видимых регистров (`ZERO`..`T3` в текущем snapshot'е, плюс `AR`/`DR`);
+- значения 16 видимых регистров (`ZERO`..`T3` в текущем snapshot'е);
 - накопленный выход модели.
 
 ---
@@ -809,7 +836,7 @@ $env:UPDATE_GOLDENS=1; pytest tests/test_golden.py -v   # PowerShell
 | **hello**              | печатает `Hello, World!\n` через `print_str` с pstr-литералом                            | `golden/hello_test.yaml`             |
 | **cat**                | читает входной поток посимвольно через `LW` из `0xFFF0` и копирует в `OUT_PORT`         | `golden/cat_test.yaml`               |
 | **hello_user_name**    | запрос имени через prompt в pstr, чтение имени через `IN_PORT`, вывод приветствия        | `golden/hello_user_name_test.yaml`   |
-| **sort**               | чтение списка чисел из `IN_PORT` (через пробел/`\n`-разделители), сортировка, печать      | `golden/sort_test.yaml`              |
+| **sort**               | чтение списка чисел из `IN_PORT` (через пробел `\n`-разделители), сортировка, печать      | `golden/sort_test.yaml`              |
 | **double_precision**   | печатает ASCII-символы `'2'` (50), `':'` (58), `'1'` (49), `'\n'` (10) → вывод `2:1\n` | `golden/double_precision_test.yaml`  |
 | **alg1**    | Project Euler №4: наибольшее число-палиндром, произведение двух трёхзначных чисел → вывод `906609\n` | `golden/alg1_test.yaml`             |
 

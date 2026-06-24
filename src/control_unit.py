@@ -13,6 +13,8 @@ B_NONE: int = 0
 B_RS2: int = 1
 B_IMM: int = 2
 B_ZERO: int = 3
+B_IMM26: int = 4
+B_IMM21: int = 5
 
 REG_NONE: int = 0
 REG_ALU: int = 1
@@ -49,12 +51,12 @@ class MI:
         w = 0
         if self.ir_we:
             w |= 1 << 0
+        if self.alu_exec:
+            w |= 1 << 1
         if self.pc_src:
             w |= 1 << 2
         w |= (self.a_sel & 0x3) << 5
-        w |= (self.b_sel & 0x3) << 7
-        if self.alu_exec:
-            w |= 1 << 9
+        w |= (self.b_sel & 0x7) << 7
         if self.mar_we:
             w |= 1 << 10
         if self.mem_rd:
@@ -117,16 +119,16 @@ _MAP[0x2A] = 43  # JR
 _MAP[0x3F] = 44  # HALT
 
 _UROM: list[MI] = [
-    MI(a_sel=A_PC, b_sel=B_ZERO, alu_exec=True, mar_we=True, br_type=0),  # 0: FETCH
-    MI(ir_we=True, br_type=2),  # 1: DECODE
-    MI(br_type=3),  # 2: NOP
-    MI(a_sel=A_RS1, b_sel=B_IMM, alu_exec=True, mar_we=True, mem_rd=True, br_type=0),  # 3: LW_EXEC
-    MI(reg_we=True, reg_src=REG_MEM, br_type=3),  # 4: LW_WB
-    MI(a_sel=A_RS1, b_sel=B_IMM, alu_exec=True, mar_we=True, mem_wr=True, br_type=3),  # 5: SW
-    MI(a_sel=A_RS1, b_sel=B_IMM, alu_exec=True, mar_we=True, mem_rd=True, mem_byte=True, br_type=0),  # 6: LB_EXEC
-    MI(reg_we=True, reg_src=REG_MEM, br_type=3),  # 7: LB_WB
-    MI(a_sel=A_RS1, b_sel=B_IMM, alu_exec=True, mar_we=True, mem_wr=True, mem_byte=True, br_type=3),  # 8: SB
-    MI(reg_we=True, reg_src=REG_IMM20, br_type=3),  # 9: LUI
+    MI(ir_we=True, br_type=1, addr=1),                                                                        #  0: FETCH
+    MI(br_type=2),                                                                                            #  1: DECODE
+    MI(br_type=3),                                                                                            #  2: NOP
+    MI(a_sel=A_RS1, b_sel=B_IMM, alu_exec=True, mar_we=True, mem_rd=True, br_type=1, addr=4),                 #  3: LW_EXEC
+    MI(reg_we=True, reg_src=REG_MEM, br_type=3),                                                              #  4: LW_WB
+    MI(a_sel=A_RS1, b_sel=B_IMM, alu_exec=True, mar_we=True, mem_wr=True, br_type=3),                         #  5: SW_EXEC
+    MI(a_sel=A_RS1, b_sel=B_IMM, alu_exec=True, mar_we=True, mem_rd=True, mem_byte=True, br_type=1, addr=4),  #  6: LB_EXEC
+    MI(reg_we=True, reg_src=REG_MEM, br_type=3),                                                              #  7: LB_WB
+    MI(a_sel=A_RS1, b_sel=B_IMM, alu_exec=True, mar_we=True, mem_wr=True, mem_byte=True, br_type=3),          #  8: SB_EXEC
+    MI(reg_we=True, reg_src=REG_IMM20, br_type=3),                                         #  9: LUI
     MI(a_sel=A_RS1, b_sel=B_RS2, alu_exec=True, reg_we=True, reg_src=REG_ALU, br_type=3),  # 10: ADD
     MI(a_sel=A_RS1, b_sel=B_RS2, alu_exec=True, reg_we=True, reg_src=REG_ALU, br_type=3),  # 11: SUB
     MI(a_sel=A_RS1, b_sel=B_RS2, alu_exec=True, reg_we=True, reg_src=REG_ALU, br_type=3),  # 12: MUL
@@ -149,19 +151,19 @@ _UROM: list[MI] = [
     MI(a_sel=A_RS1, b_sel=B_IMM, alu_exec=True, reg_we=True, reg_src=REG_ALU, br_type=3),  # 29: SRLI
     MI(a_sel=A_RS1, b_sel=B_IMM, alu_exec=True, reg_we=True, reg_src=REG_ALU, br_type=3),  # 30: SRAI
     MI(a_sel=A_RS1, b_sel=B_IMM, alu_exec=True, reg_we=True, reg_src=REG_ALU, br_type=3),  # 31: SLTI
-    MI(a_sel=A_PC, b_sel=B_IMM, alu_exec=True, reg_src=REG_ALU, pc_src=True, br_type=3),  # 32: BEQ
-    MI(a_sel=A_PC, b_sel=B_IMM, alu_exec=True, reg_src=REG_ALU, pc_src=True, br_type=3),  # 33: BNE
-    MI(a_sel=A_PC, b_sel=B_IMM, alu_exec=True, reg_src=REG_ALU, pc_src=True, br_type=3),  # 34: BLT
-    MI(a_sel=A_PC, b_sel=B_IMM, alu_exec=True, reg_src=REG_ALU, pc_src=True, br_type=3),  # 35: BLE
-    MI(a_sel=A_PC, b_sel=B_IMM, alu_exec=True, reg_src=REG_ALU, pc_src=True, br_type=3),  # 36: BGT
-    MI(a_sel=A_PC, b_sel=B_IMM, alu_exec=True, reg_src=REG_ALU, pc_src=True, br_type=3),  # 37: BGE
-    MI(a_sel=A_PC, b_sel=B_IMM, alu_exec=True, reg_src=REG_ALU, pc_src=True, br_type=3),  # 38: BGTU
-    MI(a_sel=A_PC, b_sel=B_IMM, alu_exec=True, reg_src=REG_ALU, pc_src=True, br_type=3),  # 39: BLEU
-    MI(pc_src=True, br_type=3),  # 40: J
-    MI(reg_we=True, reg_src=REG_PC, br_type=0),  # 41: JAL_EXEC
-    MI(pc_src=True, br_type=3),  # 42: JAL_WB
-    MI(a_sel=A_RS1, b_sel=B_IMM, alu_exec=True, reg_src=REG_ALU, pc_src=True, br_type=3),  # 43: JR
-    MI(halt=True),  # 44: HALT
+    MI(a_sel=A_PC, b_sel=B_IMM, alu_exec=True, reg_src=REG_ALU, pc_src=True, br_type=3),   # 32: BEQ
+    MI(a_sel=A_PC, b_sel=B_IMM, alu_exec=True, reg_src=REG_ALU, pc_src=True, br_type=3),   # 33: BNE
+    MI(a_sel=A_PC, b_sel=B_IMM, alu_exec=True, reg_src=REG_ALU, pc_src=True, br_type=3),   # 34: BLT
+    MI(a_sel=A_PC, b_sel=B_IMM, alu_exec=True, reg_src=REG_ALU, pc_src=True, br_type=3),   # 35: BLE
+    MI(a_sel=A_PC, b_sel=B_IMM, alu_exec=True, reg_src=REG_ALU, pc_src=True, br_type=3),   # 36: BGT
+    MI(a_sel=A_PC, b_sel=B_IMM, alu_exec=True, reg_src=REG_ALU, pc_src=True, br_type=3),   # 37: BGE
+    MI(a_sel=A_PC, b_sel=B_IMM, alu_exec=True, reg_src=REG_ALU, pc_src=True, br_type=3),    # 38: BGTU
+    MI(a_sel=A_PC, b_sel=B_IMM, alu_exec=True, reg_src=REG_ALU, pc_src=True, br_type=3),    # 39: BLEU
+    MI(a_sel=A_PC, b_sel=B_IMM26, alu_exec=True, reg_src=REG_ALU, pc_src=True, br_type=3),  # 40: J
+    MI(reg_we=True, reg_src=REG_PC, br_type=1, addr=42),                                    # 41: JAL_EXEC
+    MI(a_sel=A_PC, b_sel=B_IMM21, alu_exec=True, reg_src=REG_ALU, pc_src=True, br_type=3),  # 42: JAL_WB
+    MI(a_sel=A_RS1, b_sel=B_IMM, alu_exec=True, reg_src=REG_ALU, pc_src=True, br_type=3),   # 43: JR
+    MI(halt=True),                                                                          # 44: HALT
 ]
 
 _PHASE_NAMES: list[str] = [
@@ -170,10 +172,10 @@ _PHASE_NAMES: list[str] = [
     "NOP",
     "LW_EXEC",
     "LW_WB",
-    "SW",
+    "SW_EXEC",
     "LB_EXEC",
     "LB_WB",
-    "SB",
+    "SB_EXEC",
     "LUI",
     "ADD",
     "SUB",

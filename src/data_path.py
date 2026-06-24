@@ -1,9 +1,11 @@
 from collections.abc import Callable
 from typing import Any
 
-from src.control_path import (
+from src.control_unit import (
     A_PC,
     B_IMM,
+    B_IMM21,
+    B_IMM26,
     B_ZERO,
     MI,
     REG_ALU,
@@ -16,8 +18,6 @@ from src.control_path import (
 )
 from src.isa import (
     DATA_MEM_SIZE,
-    IMM21_MASK,
-    IMM26_MASK,
     IN_PORT,
     NUM_REGS,
     OUT_PORT,
@@ -204,14 +204,28 @@ class DataPath:
         ctx = self._ctx
         name = ctx.get("name", "")
         rs1, rs2, rd = ctx["rs1"], ctx["rs2"], ctx["rd"]
-        imm_s = ctx["imm_s"]
 
         r1_data = self.regs.read(rs1)
         r2_data = self.regs.read(rs2)
         self.cp.evaluate_branch(name, r1_data, r2_data)
 
         self.a = self.pc if mi.a_sel == A_PC else r1_data
-        self.b = imm_s if mi.b_sel == B_IMM else (0 if mi.b_sel == B_ZERO else r2_data)
+        if mi.b_sel == B_IMM:
+            self.b = ctx["imm_s"]
+        elif mi.b_sel == B_IMM26:
+            imm = ctx["imm_u26"]
+            if imm & (1 << 25):
+                imm |= 0xFC000000  # sign-extend 26→32 bits
+            self.b = imm
+        elif mi.b_sel == B_IMM21:
+            imm = ctx["imm_u21"]
+            if imm & (1 << 20):
+                imm |= 0xFFF00000  # sign-extend 21→32 bits
+            self.b = imm
+        elif mi.b_sel == B_ZERO:
+            self.b = 0
+        else:
+            self.b = r2_data
 
         if mi.alu_exec:
             name = self._ctx.get("name", "")
@@ -254,18 +268,6 @@ class DataPath:
         if mi.pc_src:
             if not self.cp.take_pc:
                 return False
-            name = ctx["name"]
-            if name == "J":
-                imm26 = ctx["imm_u26"]
-                if imm26 & (1 << 25):
-                    imm26 |= ~IMM26_MASK
-                self.pc = (self.pc + imm26) & WORD_MASK
-            elif name == "JAL":
-                imm21 = ctx["imm_u21"]
-                if imm21 & (1 << 20):
-                    imm21 |= ~IMM21_MASK
-                self.pc = (self.pc + imm21) & WORD_MASK
-            else:
-                self.pc = self.feedback_bus
+            self.pc = self.feedback_bus
 
         return False

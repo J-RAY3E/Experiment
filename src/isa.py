@@ -24,7 +24,7 @@ OUT_PORT = 0xFFFFFFF4
 
 NUM_REGS = 32
 DATA_MEM_SIZE = 32768
-STACK_BASE = 0x4000
+STACK_BASE = 0x8000
 
 OPCODES = {
     "NOP": 0x00,
@@ -120,12 +120,14 @@ U_FORMAT = {"LUI"}
 
 HALT_WORD = OPCODES["HALT"] << OPCODE_SHIFT
 
+
 def _sext11(imm: int) -> int:
     return imm | ~IMM11_MASK if imm & IMM11_SIGN else imm
 
 
 def _sext12(imm: int) -> int:
     return imm | ~IMM12_MASK if imm & IMM12_SIGN else imm
+
 
 def decode(word: int) -> dict[str, Any]:
     op = (word >> OPCODE_SHIFT) & OPCODE_MASK

@@ -4,7 +4,7 @@ import sys
 from pathlib import Path
 from typing import Any
 
-from src.control_path import ControlPath
+from src.control_unit import ControlPath
 from src.data_path import DataPath
 from src.isa import REG, REG_NAMES, STACK_BASE, decode
 
@@ -92,7 +92,6 @@ class Machine:
             return
         self.tick_count += 1
 
-        ir = self.dp.ir
         mi = self.cp.current_mi()
         mi_name = self.cp.phase_name
         inst_word: int | None = None
