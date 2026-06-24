@@ -340,7 +340,7 @@ class HL:
 
     def _gf(self, f):
         im = f["function"] == "main"
-        ba = []
+        ba: list[str] = []
         sv = self.asm
         self.asm = ba
         self.em(f"{f['function']}:")
